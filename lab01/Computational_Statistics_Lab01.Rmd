@@ -1,0 +1,209 @@
+---
+title: "Computational Statistics - Lab 01"
+author: "Maximilian Pfundstein"
+date: "21 januari 2019"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+library(ggplot2)
+library(knitr)
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Question 1: Be Careful When Comparing
+
+```{r}
+
+x1 = 1/3
+x2 = 1/4
+
+if (x1-x2 == 1/12) {
+  print("Substraction is correct.")
+} else {
+  print("Substraction is wrong.")
+}
+
+```
+
+```{r}
+
+x1 = 1
+x2 = 1/2
+
+if (x1-x2 == 1/2) {
+  print("Substraction is correct.")
+} else {
+  print("Substraction is wrong.")
+}
+
+```
+
+**Questions:**
+
+1. Check the results of the snippets. Comment what is going on.
+2. If there are any problems, suggest improvements.
+
+**Answers:**
+
+1. The first substraction is not wrong - it is perfectly working as defined in [IEEE_754](https://en.wikipedia.org/wiki/IEEE_754) which is a commonly used definition for floating point numbers. To make a long strory short: You have an infinite amount of real numbers for instance between $0.0$ and $1.0$ but just 32 or 64 bits for the represetation (so $2^{32}$ states or $2^{64}$ states) so it's impossible to represent every number (t.ex. try writing down 1/3 in the decimal system, at one point you simply must stop). The second substraction does not have a floating point error as you can represent multiples of the power of two in the binary system $2^(-1) = 0.5$.
+
+2. You cannot get rid of the "problem", just use more bits for representing the numbers until you have the desired precision or use/write a class which can handle a specific amount of numbers behind the decimal point (which will be slower for sure).
+
+# Question 2: Derivative
+
+## Custom Derivative Function
+
+**Question:** Write your own R function to calculate the derivative of `f(x) = x` in this way with $\epsilon = 10^{-15}$.
+
+```{r}
+
+epsilon = 10^(-15)
+
+f_prime = function(x) {
+  return( (f(x + epsilon) - f(x)) / epsilon)
+}
+
+f = function(x) {
+  return(x)
+}
+
+```
+
+**Question:** Evaluate your derivative function at `x = 1` and `x = 100000`.
+
+```{r}
+
+first = f_prime(1)
+second = f_prime(100000)
+
+print(first)
+print(second)
+
+```
+
+
+```{r}
+
+sequence = seq(from = 0, to = 20, by = 1)
+func = f(sequence)
+deri = f_prime(sequence)
+df = data.frame(sequence, deri)
+
+ggplot(df) +
+  geom_line(aes(x = sequence, y = func), color = "#FFC300") +
+  theme_minimal()
+
+ggplot(df) +
+  geom_line(aes(x = sequence, y = deri), color = "#C70039") +
+  theme_minimal()
+
+
+```
+
+
+**Answer:** The derivate of `f(x) = x` is `f'(x) = 1` so it's `1` at all spots.
+
+**Question:** What values did you obtain? What are the true values? Explain the reasons behind the
+discovered differences.
+
+**Answer:** As `epsilon` is a really small number and we do calculations with a rather big number (`x`) we run into precision problems which are more heavy if the magnitude of numbers is great. Therefore we se that if we take `x = 1` the error is smaller, but still big enough to give a weird result. As we take `x = 100000` the difference in magnitude increased further so we obtain the weird result `0` which s obviously totally wrong.
+
+# Variance
+
+**Question:** Write your own R function, `myvar`, to estimate the variance in this way..
+
+```{r}
+
+myvar = function(x) return(1/(length(x)-1)  * (sum(x^2) - (sum(x)^2)/length(x)))
+
+```
+
+**Question:** Generate a vector $x = (x_1, ..., x_{10000}$ with 10000 random numbers with mean $10^8$ and variance $1$.
+
+```{r}
+
+v = rnorm(10000, mean = 10^8, sd = 1)
+
+```
+
+**Question:** For each subset $X_i = \{x1,...,x_i \}, i = 1, ..., 10000$ compute the difference $Y_i = myvar(X_i)-var(X_i)$, where $var(X_i)$ is the standard variance estimation function in R. Plot the dependence $Y_i$ on $i$. Draw conclusions from this plot. How well does your function work? Can you explain the behaviour?
+
+```{r}
+
+X = data.frame()
+
+for (i in 1:length(v)) {
+  Xi = v[1:i]
+  Yi = myvar(as.vector(Xi)) - var(Xi)
+  Yi_index = list(index = i, value = Yi)
+  X = rbind(X, Yi_index)
+}
+
+ggplot(X[2:nrow(X),]) +
+  geom_point(aes(x = index, y = value), color = "#C70039") +
+  theme_minimal()
+
+```
+
+**Answer:**
+
+**Question:** How can you better implement a variance estimator? Find and implement a formula that will give the same results as `var()`?
+
+```{r}
+
+custom_variance = function(x) {
+  mean_difference = sapply(X = x, FUN = function(value, y) { value - mean(y) }, y = x)
+  sum_mean_squared = sum(mean_difference^2)
+  return(sum_mean_squared / (length(x)))
+}
+
+```
+
+# Question 4: Linear Algebra
+
+**Question:** Import the data set to R.
+
+```{r}
+
+data = read.csv2("tecator.csv", sep=",", dec=".")
+kable(head(data[, c(1, 101, 102, 103, 104)]))
+
+```
+
+**Question:** Optimal regression coeffcients can be found by solving a system of the type $A\vec{\beta} = \vec{b}$ where $A = X^TX$ and $\vec{b} = X^T\vec{y}$. Compute $A$ and $\vec{b}$ for the given data set. The matrix $X$ are the observations of the absorbance records, levels of moisture and fat, while $\vec{y}$ are the protein levels.
+
+```{r}
+
+X = as.matrix(data[, c(1:102, 104)])
+Y = as.matrix(data[, c(103)])
+A = t(X) %*% X
+b = t(X) %*% Y
+
+```
+
+**Question:** Try to solve $A\vec{\beta} = \vec{b}$ with default solver `solve()`. What kind of result did you get? How can this result be explained?
+
+```{r, eval = FALSE}
+
+beta = solve(A) %*% b
+
+```
+
+**Question:** Check the condition number of the matrix A (function `kappa()`) and consider how it is related to your conclusion in step 3.
+
+```{r}
+
+kappa(A)
+
+```
+
+**Qestion:** Scale the data set and repeat steps 2-4. How has the result changed and why?
+
+```{r}
+
+```
+
+
