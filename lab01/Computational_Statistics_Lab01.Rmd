@@ -156,7 +156,7 @@ v = rnorm(10000, mean = 10^8, sd = 1)
 
 **Question:** For each subset $X_i = \{x1,...,x_i \}, i = 1, ..., 10000$ compute the difference $Y_i = myvar(X_i)-var(X_i)$, where $var(X_i)$ is the standard variance estimation function in R. Plot the dependence $Y_i$ on $i$. Draw conclusions from this plot. How well does your function work? Can you explain the behaviour?
 
-```{r}
+```{r, echo = FALSE}
 
 X = data.frame()
 
