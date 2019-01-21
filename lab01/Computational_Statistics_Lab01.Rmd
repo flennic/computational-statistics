@@ -3,19 +3,31 @@ title: "Computational Statistics - Lab 01"
 author: "Maximilian Pfundstein"
 date: "21 januari 2019"
 output:
-  pdf_document: default
-  html_document: default
+  pdf_document:
+    toc: true
+    toc_depth: 3
+    number_sections: true
+  html_document:
+    df_print: paged
+    toc: true
+    toc_float: false
+    number_sections: false
 ---
 
-```{r setup, include=FALSE}
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(echo = TRUE, cache = TRUE, include = TRUE, eval = TRUE)
 library(ggplot2)
 library(knitr)
-knitr::opts_chunk$set(echo = TRUE)
+library(gridExtra)
 ```
 
 # Question 1: Be Careful When Comparing
 
 ```{r}
+
+################################################################################
+# Question 1 - Be Careful When Comparing
+################################################################################
 
 x1 = 1/3
 x2 = 1/4
@@ -48,17 +60,19 @@ if (x1-x2 == 1/2) {
 
 **Answers:**
 
-1. The first substraction is not wrong - it is perfectly working as defined in [IEEE_754](https://en.wikipedia.org/wiki/IEEE_754) which is a commonly used definition for floating point numbers. To make a long strory short: You have an infinite amount of real numbers for instance between $0.0$ and $1.0$ but just 32 or 64 bits for the represetation (so $2^{32}$ states or $2^{64}$ states) so it's impossible to represent every number (t.ex. try writing down 1/3 in the decimal system, at one point you simply must stop). The second substraction does not have a floating point error as you can represent multiples of the power of two in the binary system $2^(-1) = 0.5$.
+1. The first substraction is not wrong - it is perfectly working as defined in [IEEE_754](https://en.wikipedia.org/wiki/IEEE_754) which is a commonly used definition for floating point numbers. To make a long strory short: You have an infinite amount of real numbers for instance between $0.0$ and $1.0$ but just 32 or 64 bits for the represetation (so $2^{32}$ states or $2^{64}$ states) so it's impossible to represent every number (t.ex. try writing down 1/3 in the decimal system, at one point you simply must stop). The second substraction does not have a floating point error as you can represent multiples of the power of two in the binary system $2^{-1} = 0.5$.
 
 2. You cannot get rid of the "problem", just use more bits for representing the numbers until you have the desired precision or use/write a class which can handle a specific amount of numbers behind the decimal point (which will be slower for sure).
 
 # Question 2: Derivative
 
-## Custom Derivative Function
-
 **Question:** Write your own R function to calculate the derivative of `f(x) = x` in this way with $\epsilon = 10^{-15}$.
 
 ```{r}
+
+################################################################################
+# Question 2: Derivative
+################################################################################
 
 epsilon = 10^(-15)
 
@@ -84,44 +98,55 @@ print(second)
 
 ```
 
+The following plots show the function `f` and `f_prime` in the interval `0...20`. We observe that the derivative seems to take discrete values and is `0` around `x = 16`.
 
-```{r}
+```{r, echo = FALSE}
 
 sequence = seq(from = 0, to = 20, by = 1)
 func = f(sequence)
 deri = f_prime(sequence)
 df = data.frame(sequence, deri)
 
-ggplot(df) +
-  geom_line(aes(x = sequence, y = func), color = "#FFC300") +
+p1 = ggplot(df) +
+  geom_line(aes(x = sequence, y = func), color = "#C70039") +
+  labs(title = "f_prime(x)", y = "f_prime(x)", x = "x") +
   theme_minimal()
 
-ggplot(df) +
-  geom_line(aes(x = sequence, y = deri), color = "#C70039") +
+p2 = ggplot(df) +
+  geom_line(aes(x = sequence, y = deri), color = "#900C3F") +
+  labs(title = "f(x)", y = "f(x)", x = "x") +
   theme_minimal()
 
+grid.arrange(p1, p2, nrow = 1)
 
 ```
-
-
-**Answer:** The derivate of `f(x) = x` is `f'(x) = 1` so it's `1` at all spots.
 
 **Question:** What values did you obtain? What are the true values? Explain the reasons behind the
 discovered differences.
 
-**Answer:** As `epsilon` is a really small number and we do calculations with a rather big number (`x`) we run into precision problems which are more heavy if the magnitude of numbers is great. Therefore we se that if we take `x = 1` the error is smaller, but still big enough to give a weird result. As we take `x = 100000` the difference in magnitude increased further so we obtain the weird result `0` which s obviously totally wrong.
+**Answer:** The values and plots can be seen above.
 
-# Variance
+The derivate of `f(x) = x` is `f'(x) = 1` so the true slope is `1` at all spots.
 
-**Question:** Write your own R function, `myvar`, to estimate the variance in this way..
+As `epsilon` is a really small number and we do calculations with a rather big number (`x`) we run into precision problems which are more heavy if the magnitudes of the numbers is greatly different. Therefore we see that if we take `x = 1` the error is smaller, but still big enough to give an undesired result. As we take `x = 100000` the difference in magnitude increased further so we obtain the weird result `0` which s obviously totally wrong.
+
+If you evaluate only the nominator you will see that it's `0` after `x = 16` so the result will always be `0` (assuming the denominator is unequal to `0`).
+
+# Question 3: Variance
+
+**Question:** Write your own R function, `myvar`, to estimate the variance in this way.
 
 ```{r}
+
+################################################################################
+# Question 3: Variance
+################################################################################
 
 myvar = function(x) return(1/(length(x)-1)  * (sum(x^2) - (sum(x)^2)/length(x)))
 
 ```
 
-**Question:** Generate a vector $x = (x_1, ..., x_{10000}$ with 10000 random numbers with mean $10^8$ and variance $1$.
+**Question:** Generate a vector $x = (x_1, ..., x_{10000})$ with 10000 random numbers with mean $10^8$ and variance $1$.
 
 ```{r}
 
@@ -137,36 +162,84 @@ X = data.frame()
 
 for (i in 1:length(v)) {
   Xi = v[1:i]
-  Yi = myvar(as.vector(Xi)) - var(Xi)
-  Yi_index = list(index = i, value = Yi)
+  vec_myvar = myvar(as.vector(Xi))
+  vec_var = var(Xi)
+  Yi = vec_myvar - vec_var
+  Yi_index = list(index = i, value = Yi, vec_myvar = vec_myvar, vec_var = vec_var)
   X = rbind(X, Yi_index)
 }
 
 ggplot(X[2:nrow(X),]) +
-  geom_point(aes(x = index, y = value), color = "#C70039") +
+  geom_point(aes(x = index, y = value, colour = "Difference")) +
+  geom_point(aes(x = index, y = vec_myvar,  colour = "my_var()")) +
+  geom_point(aes(x = index, y = vec_var, colour = "var()")) +
+  labs(title = "Difference in Variance", y = "Variance",
+  x = "Sequence", color = "Legend") +
+  scale_color_manual(values = c("#C70039", "#407AFF", "#FFC300")) +
+  scale_x_log10() + 
   theme_minimal()
 
 ```
 
-**Answer:**
+**Answer:** When interpretating the plot one has to keep in mind that each subset contains one value more than the previous one, so we should observe that we're getting better estimations for the variance which an increased index. Let's focus on the first values (`index < 10`). They're highly scattered which is to be expected for such a small number of data points. With increasing `index` we see that some pattern is repeated. We have datapoints around `-1` as well as trails towards the center. If we look at the trail that is on the upper half, ending at around an index of `100` we observe the following values:
+
+```{r, ehco = FALSE}
+
+kable(X[X$index > 70 & X$index < 100,])
+
+```
+
+As we see the trails are **not** continuous as they heavily fluctuade. So, as it seems like they do not converge and are not continuous, this function (`my_var()`) seems not to be a good estimator for the variance. As we have rather big values with just a small variance from the created data and we have the sum of quite a few data, we might run into an underflow and precision problems.
 
 **Question:** How can you better implement a variance estimator? Find and implement a formula that will give the same results as `var()`?
+
+**Answer:** We use this formula:
+
+$$s = \frac{\sum_{i=1}^{n}(x_i-\overline{x})^2}{n-1}$$
+
+This is the sample standard deviance and thus is biased (if we assume our $\vec{v}$ as a sample from a population).
 
 ```{r}
 
 custom_variance = function(x) {
-  mean_difference = sapply(X = x, FUN = function(value, y) { value - mean(y) }, y = x)
-  sum_mean_squared = sum(mean_difference^2)
-  return(sum_mean_squared / (length(x)))
+  diff_mean = x - mean(x)
+  return(sum(diff_mean^2 / (length(x) - 1)))
 }
 
 ```
+
+```{r, echo = FALSE}
+
+for (i in 1:length(v)) {
+  Xi = v[1:i]
+  X$vec_customvar[[i]] = custom_variance(as.vector(Xi))
+}
+
+ggplot(X[2:nrow(X),]) +
+  geom_point(aes(x = index, y = value, colour = "Difference")) +
+  geom_point(aes(x = index, y = vec_myvar,  colour = "my_var()")) +
+  geom_point(aes(x = index, y = vec_var, colour = "var()")) +
+  geom_point(aes(x = index, y = vec_customvar, colour = "custom_variance()")) +
+  labs(title = "Difference in Variance", y = "Variance",
+  x = "Sequence", color = "Legend") +
+  scale_color_manual(values = c("#17202A", "#C70039", "#407AFF", "#FFC300")) +
+  scale_x_log10() + 
+  theme_minimal()
+
+
+```
+
+It can be seen that this function does a way better job at converging and returns almost (or exactly) the same values as the built in function and this covering the `var()` plot almost perfectly.
 
 # Question 4: Linear Algebra
 
 **Question:** Import the data set to R.
 
 ```{r}
+
+################################################################################
+# Question 4: Linear Algebra
+################################################################################
 
 data = read.csv2("tecator.csv", sep=",", dec=".")
 kable(head(data[, c(1, 101, 102, 103, 104)]))
@@ -186,9 +259,16 @@ b = t(X) %*% Y
 
 **Question:** Try to solve $A\vec{\beta} = \vec{b}$ with default solver `solve()`. What kind of result did you get? How can this result be explained?
 
-```{r, eval = FALSE}
+```{r}
 
-beta = solve(A) %*% b
+tryCatch(
+    expr = {
+        beta = solve(A) %*% b
+    },
+    error = function(e){ 
+        paste("That escalated rather quickly: ", e)
+    }
+)
 
 ```
 
@@ -200,10 +280,84 @@ kappa(A)
 
 ```
 
-**Qestion:** Scale the data set and repeat steps 2-4. How has the result changed and why?
+As we mostly work with *rational* numbers we are used to the fact that almost every number has a inverse. An inverse $a^{-1}$ is defined as that element that, multiplied with $a$ results in the *neutral element*, at least for multiplications in arithmetics. In arithmetics we only have one number that does not have an multiplicative inverse which is `0` as `1/0` is undefined.
+
+With matirces there are way more such matrices that do not have an inverse, exactly then when:
+
+- The matrix is not a square.
+- The determinant and thus the span is `0`.
+
+If we imagine a matrix as a linear transformation the determinant is the factor by which the space is streched or compressed. Thus a determinant of `0` tells us if the given linear transformation is squishing the amount of dimensions.
+
+So it's reasonable that we have matrices that do not have an inverse. If we wanted to use the inverse for calculating or solving an equation, we have to find a different way (t.ex. QR-decomposition).
+
+The `kappa()` function computes an estimate of the condition number of a matrix. Given a linear equation $Ax = b$ the number gives us an estimation of how inaccurate the approximation of $x$ is going to be. One can also say that it says how much $x$ is going to change in respect to $b$. So if we have a large condition number it means that a small error in $b$ is likely to cause a large error in $x$. As our number here is rather large, we can conclude that our features are linearly dependant.
+
+**Question:** Scale the data set and repeat steps 2-4. How has the result changed and why?
 
 ```{r}
 
+data_scaled = scale(data)
+
+X = as.matrix(data_scaled[, c(1:102, 104)])
+Y = as.matrix(data_scaled[, c(103)])
+A = t(X) %*% X
+b = t(X) %*% Y
+
+beta = solve(A) %*% b
+
 ```
 
+The result has changed as we scaled the data. Before we ran into computational issues as the scale for each feature was on a different scope/scale which can lead to those errors. The `sclae()` made them of equal size and thus solved the problem.
+
+Last but not least, let's look at the new conditional number, which should be smaller:
+
+```{r}
+
+kappa(A)
+
+```
+
+It is smaller as we'd have expected. So everyone is happy and we can conclude this lab!
+
+```{r, eval = FALSE}
+
+                                      _.--"""--,
+                                    .'          `\
+  .-""""""-.                      .'              |
+ /          '.                   /            .-._/
+|             `.                |             |
+ \              \          .-._ |          _   \
+  `""'-.         \_.-.     \   `          ( \__/
+        |             )     '=.       .,   \  
+       /             (         \     /  \  /
+     /`               `\        |   /    `'
+     '..-`\        _.-. `\ _.__/   .=.
+          |  _    / \  '.-`    `-.'  /
+          \_/ |  |   './ _     _  \.'
+               '-'    | /       \ |  
+                      |  .-. .-.  |   H A V E   N I C E   D A Y !
+                      \ / o| |o \ /
+                       |   / \   |           M O O !
+                      / `"`   `"` \
+                     /             \
+                    | '._.'         \
+                    |  /             |
+                     \ |             |
+                      ||    _    _   /
+                      /|\  (_\  /_) /
+                      \ \'._  ` '_.'
+                       `""` `"""`
+
+
+```
+
+
+
+
+# Source Code
+
+```{r, ref.label=knitr::all_labels(), echo = TRUE, eval = FALSE, results = 'show'}
+
+```
 
