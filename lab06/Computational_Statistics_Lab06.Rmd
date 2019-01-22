@@ -1,0 +1,198 @@
+---
+title: "Computational Statistics - Lab 06"
+author: "Maximilian Pfundstein"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    df_print: paged
+    toc: true
+    toc_float: false
+    number_sections: false
+  pdf_document:
+    toc: true
+    toc_depth: 3
+    number_sections: true
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(echo = TRUE, cache = TRUE, include = TRUE, eval = TRUE)
+library(ggplot2)
+library(knitr)
+library(gridExtra)
+```
+
+# Question 1: Genetic Algorithm
+
+In this assignment, you will try to perform one-dimensional maximization with the help of a
+genetic algorithm.
+
+**Task:** Define the function
+
+$$f(x) = \frac{x^2}{e^x}-2e^{\frac{-9sin(x)}{x^2+x+1}}$$
+```{r}
+
+f = function(x) {
+  left = x^2/exp(x)
+  exponent = (-9*sin(x))/(x^2+x+1)
+  right = 2*exp(exponent)
+  return(left-right)
+}
+
+```
+
+**Task:** Define the function `crossover()`: for two scalars `x` and `y` it returns their "kid"" as `(x+y)/2`
+
+```{r}
+
+crossover = function(x, y) return((x+y)/2)
+
+```
+
+**Task:** Define the function `mutate()` that for a scalar `x` returns the result of the integer division $x^2 mod 30$. (Operation mod is denoted in R as `%%`)
+
+```{r}
+
+mutate = function(x) return((x^2)%%30)
+
+```
+
+
+**Task:** Write a function that depends on the parameters `maxiter` and `mutprob` and:
+
+a. Plots function `f` in the range from 0 to 30. Do you see any maximum value?
+b. Defines an initial population for the genetic algorithm as $X = (0, 5, 10, 15, . . . , 30)$
+c. Computes vector `Values` that contains the function values for each population point.
+d. Performs `maxiter` iterations where at each iteration
+    1. Two indexes are randomly sampled from the current population, they are further used as parents (use `sample()`).
+    2. One index with the smallest objective function is selected from the current population, the point is referred to as victim (use `order()`).
+    3. Parents are used to produce a new kid by crossover. Mutate this kid with probability `mutprob` (use `crossover()`, `mutate()`).
+    4. The victim is replaced by the kid in the population and the vector `Values` is updated.
+    5. The current maximal value of the objective function is saved.
+e. Add the final observations to the current plot in another colour.
+
+**Answer:**
+
+**`a:`** Let's have a look at the plot.
+
+```{r, echo = FALSE}
+
+sequence = seq(from = 0, to = 30, by = 1)
+f.sequence. = f(sequence)
+df = data.frame(sequence, f.sequence.)
+
+ggplot(df) +
+  geom_line(aes(x = sequence, y = f.sequence.), color = "#C70039") +
+  labs(title = "f(x)", y = "f(x)", x = "x") +
+  theme_minimal()
+
+```
+
+We see as maximum value at `x`:
+
+```{r, echo = FALSE}
+
+print(sequence[which.max(f.sequence.)])
+
+```
+
+With `f(x)`:
+
+```{r}
+
+print(max(f.sequence.))
+
+```
+
+**`b:`** Let's define the initial population:
+
+```{r}
+
+X = seq(from = 0, to = 30, by = 5)
+
+```
+
+**`c:`** Let us create the `Values`.
+
+```{r}
+
+Values = f(X)
+
+```
+
+**`d:`** Let's create a for loop that is performing `maxiter` iterations as maximum.
+
+```{r}
+
+maxiter = 100
+mutprob = 0.05
+best_individual = NaN
+
+for (i in 1:maxiter) {
+  
+  # 1)
+  parents = sample(1:length(X), size = 2)
+  
+  # 2) I don't know why we should order here!?
+  victim = which.min(Values)
+  
+  # 3)
+  child = crossover(X[parents][1], X[parents][2])
+  if (mutprob > runif(n = 1, min = 0, max = 1)) {
+    child= (mutate(child))
+  }
+  
+  # 4)
+  X[victim] = child
+  Values[victim] = f(child)
+  
+  # 5)
+  best_individual = list(cx = X[victim], cy = Values[victim])
+}
+
+```
+
+**`e:`** Let's ad the final value to the plot.
+
+```{r, echo = FALSE}
+
+df = data.frame(sequence, f.sequence.)
+best_individual = as.data.frame(best_individual)
+
+ggplot(df) +
+  geom_line(aes(x = sequence, y = f.sequence.), color = "#C70039") +
+  geom_point(aes(x = cx, y = cy ), data = best_individual, color = "black",
+            fill = "white", shape = 21, size = 3, stroke = 2) +
+  labs(title = "f(x)", y = "f(x)", x = "x") +
+  theme_minimal()
+
+```
+
+
+**Task:** Run your code with different combinations of `maxiter = 10, 100` and `mutprob= 0.1, 0.5, 0.9`. Observe the initial population and final population. Conclusions?
+
+# Question 2: EM Algorithm
+
+The data file `physical.csv` describes a behavior of two related physical processes $Y = Y (X)$
+and $Z = Z(X)$.
+
+**Task:** Make a time series plot describing dependence of Z and Y versus X. Does it seem that two processes are related to each other? What can you say about the variation of the response values with respect to X?
+
+**Task:** Note that there are some missing values of Z in the data which implies problems in estimating models by maximum likelihood. Use the following model
+
+$$Y_i \sim e^{x_i/\lambda}, \quad Z_i \sim e^{x_i/2\lambda}$$
+where $\lambda$ is some unkown parameter.
+**The goal is to derive an EM algorithm that estimates $\lambda$.**
+
+**Task:** Implement this algorithm in `R`, use $λ_0 = 100$ and convergence criterion "stop if the change
+in $\lambda$ is less than `0.001`". What is the optimal $\lambda$ and how many iterations were required to
+compute it?
+
+**Task:** Plot $E[Y]$ and $E[Z]$ versus X in the same plot as Y and Z versus X. Comment whether the computed $\lambda$ seems to be reasonable.
+
+
+# Source Code
+
+```{r, ref.label=knitr::all_labels(), echo = TRUE, eval = FALSE, results = 'show'}
+
+```
+

@@ -1,7 +1,7 @@
 ---
 title: "Computational Statistics - Lab 01"
 author: "Maximilian Pfundstein"
-date: "21 januari 2019"
+date: "`r Sys.Date()`"
 output:
   pdf_document:
     toc: true
