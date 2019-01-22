@@ -3,19 +3,19 @@ title: "Computational Statistics - Lab 06"
 author: "Maximilian Pfundstein"
 date: "`r Sys.Date()`"
 output:
+  pdf_document:
+    toc: true
+    toc_depth: 3
+    number_sections: true
   html_document:
     df_print: paged
     toc: true
     toc_float: false
     number_sections: false
-  pdf_document:
-    toc: true
-    toc_depth: 3
-    number_sections: true
 ---
 
 ```{r setup, include = FALSE}
-knitr::opts_chunk$set(echo = TRUE, cache = TRUE, include = TRUE, eval = TRUE)
+knitr::opts_chunk$set(echo = TRUE, cache = FALSE, include = TRUE, eval = TRUE)
 library(ggplot2)
 library(knitr)
 library(gridExtra)
@@ -76,7 +76,7 @@ e. Add the final observations to the current plot in another colour.
 
 ```{r, echo = FALSE}
 
-sequence = seq(from = 0, to = 30, by = 1)
+sequence = seq(from = 0, to = 30, by = 0.1)
 f.sequence. = f(sequence)
 df = data.frame(sequence, f.sequence.)
 
@@ -280,7 +280,7 @@ grid.arrange(p1, p2, p3, p4, p5, p6, nrow = 3)
 
 ```
 
-As we can see we sometimes find the (nearly) best solution, but sometimes we also get stuck in a local maximum or run out of iterations to further climb the hill. We therefore conclude, that genetic (or evolutionary algorithms) are a nice way to scrape a large feature space, but that there are problems which have to be handled. There are different ways to do the mutation, crossover and the selection, also we can define a learning to prevent the algorithm getting stuck too early. Keep in mind that we here only take the best individual in the current iteration, not the overall best one, so we might "delete" some better solutions here (at least that's how it is in my implementation at the moment). So in teh end, like most models, the hyperparameters have a large impact on the performance of our algorithm.
+As we can see we sometimes find the (nearly) best solution, but sometimes we also get stuck in a local maximum or run out of iterations to further climb the hill. We therefore conclude, that genetic (or evolutionary algorithms) are a nice way to scrape a large feature space, but that there are problems which have to be handled. There are different ways to do the mutation, crossover and the selection, also we can define a learning to prevent the algorithm getting stuck too early. Keep in mind that we here only take the best individual in the current iteration, not the overall best one, so we might "delete" some better solutions here (at least that's how it is in my implementation at the moment). So in the end, like most models, the hyperparameters have a large impact on the performance of our algorithm.
 
 From previous studies with the topic we know that the way of crossover, mutation and selection have a **great** impact on the performance and can be optimized doing bitvise operations (where the significacne of bits is also important). Also the whole process can be made faster if a different language and multiprocessing (or even a GPU) are taken into consideration.
 
