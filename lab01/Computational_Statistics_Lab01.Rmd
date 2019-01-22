@@ -336,7 +336,7 @@ It is smaller as we'd have expected. So everyone is happy and we can conclude th
           |  _    / \  '.-`    `-.'  /
           \_/ |  |   './ _     _  \.'
                '-'    | /       \ |  
-                      |  .-. .-.  |   H A V E   N I C E   D A Y !
+                      |  .-. .-.  |   H A V E   A   N I C E   D A Y !
                       \ / o| |o \ /
                        |   / \   |           M O O !
                       / `"`   `"` \
