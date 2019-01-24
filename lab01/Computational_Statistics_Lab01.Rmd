@@ -3,15 +3,15 @@ title: "Computational Statistics - Lab 01"
 author: "Maximilian Pfundstein"
 date: "`r Sys.Date()`"
 output:
+  pdf_document:
+    toc: true
+    toc_depth: 3
+    number_sections: true
   html_document:
     df_print: paged
     toc: true
     toc_float: false
     number_sections: false
-  pdf_document:
-    toc: true
-    toc_depth: 3
-    number_sections: true
 ---
 
 ```{r setup, include = FALSE}
@@ -229,7 +229,7 @@ ggplot(X[2:nrow(X),]) +
 
 ```
 
-It can be seen that this function does a way better job at converging and returns almost (or exactly) the same values as the built in function and this covering the `var()` plot almost perfectly.
+It can be seen that this function does a way better job at converging and returns almost (or exactly) the same values as the built in function and thus covering the `var()` plot almost perfectly.
 
 # Question 4: Linear Algebra
 
