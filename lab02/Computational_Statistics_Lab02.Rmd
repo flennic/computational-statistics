@@ -29,15 +29,16 @@ The file `mortality_rate.csv` contains information about mortality rates of the 
 
 
 ```{r}
+################################################################################
+# Question 1: Optimizing a Model Param
+################################################################################
+
 # Data import --------------------------------
 data = read.csv("mortality_rate.csv", sep = ";", dec = ",")
 data$LMR = log(data$Rate)
 
-
 # first 6 rows of the full log- dataset -------- 
 kable(head(data))
-
-
 
 # division of data into train and test -------
 n = dim(data)[1]
@@ -151,7 +152,6 @@ $$\nabla f(\vec x) = A\vec x-\vec b = r(\vec x)$$
 The gradient is therefore used to calculate an improved lambda value. Since this is 0 at the initial lambda value, the algorithm converges. 
 In contrast to the optimize function, the minimum could not be found here. It is possible, however, that optim works much more efficiently if no 0 gradients occur.
 
-
 # Question 2: Maximizing Likelihood
 
 The file data.RData contains a sample from normal distribution with some parameters $\mu$, $\sigma$. For this question read `?optim in detail.
@@ -159,6 +159,10 @@ The file data.RData contains a sample from normal distribution with some paramet
 **Task:** Load the data to R environment.
 
 ```{r}
+
+################################################################################
+# Question 2: Maximizing Likelihood
+################################################################################
 
 data2 = get(load("data.RData"))
 head(data2)
@@ -194,8 +198,6 @@ neg_llik_norm = function(par) {
   p3 = 1/(2*par[2]^2) * sum
   return(p1+p2+p3)
 }
-
-
 
 ```
 
