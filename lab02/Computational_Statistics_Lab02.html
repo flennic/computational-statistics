@@ -253,15 +253,52 @@ head(data2)</code></pre>
 <p><span class="math display">\[\hat\sigma_n^2=\frac{1}{n}\sum_{j-1}^{n}(x_j-\hat\mu)^2\]</span></p>
 <p>Taken from <a href="https://www.statlect.com/fundamentals-of-statistics/normal-distribution-maximum-likelihood" class="uri">https://www.statlect.com/fundamentals-of-statistics/normal-distribution-maximum-likelihood</a>, not derived by hand. How the formulas can be derived can be found on the page.</p>
 <p>The implementation in R looks like the following:</p>
-<pre class="r"><code>llik_norm = function(x, mu, sigma) {
-  n = nrow(as.matrix(x))
-  p1 = (n/2)*log(2*pi)
-  p2 = (n/2)*log(sigma^2)
-  sum = sum((x - mu)^2)
-  p3 = 1/(2*sigma^2) * sum
-  return(p1+p2+p3)
-}</code></pre>
 <p><strong>Task:</strong> Optimize the minus log–likelihood function with initial parameters <span class="math inline">\(\mu = 0\)</span>, <span class="math inline">\(\sigma = 1\)</span>. Try both Conjugate Gradient method (described in the presentation handout) and BFGS (discussed in the lecture) algorithm with gradient specified and without. Why it is a bad idea to maximize likelihood rather than maximizing log–likelihood?</p>
+<p><strong>Conjugate Gradient Method:</strong></p>
+<pre class="r"><code>optim(c(0, 1), neg_llik_norm, method = &quot;CG&quot;, hessian = TRUE)</code></pre>
+<pre><code>## $par
+## [1] 1.275528 2.005977
+## 
+## $value
+## [1] 211.5069
+## 
+## $counts
+## function gradient 
+##      180       33 
+## 
+## $convergence
+## [1] 0
+## 
+## $message
+## NULL
+## 
+## $hessian
+##               [,1]          [,2]
+## [1,]  2.485125e+01 -2.934541e-06
+## [2,] -2.934541e-06  4.970262e+01</code></pre>
+<p><strong>BFGS:</strong></p>
+<pre class="r"><code>optim(c(0, 1), neg_llik_norm, method = &quot;BFGS&quot;, hessian = TRUE)</code></pre>
+<pre><code>## $par
+## [1] 1.275528 2.005977
+## 
+## $value
+## [1] 211.5069
+## 
+## $counts
+## function gradient 
+##       37       15 
+## 
+## $convergence
+## [1] 0
+## 
+## $message
+## NULL
+## 
+## $hessian
+##              [,1]         [,2]
+## [1,] 2.485124e+01 1.897149e-06
+## [2,] 1.897149e-06 4.970256e+01</code></pre>
+<p><strong>Answer:</strong> The likelihood is a product of really small values. This means that we reach the floiting point precision limits rather fast and it becomes basically impossible to calculate the likelihood at one point. Thus we use the loglikihood, because we convert the product to a (negative) sum. The make up for an optimization problem, we often use the negative loglikelihood the get rid of the negative signs.</p>
 <p><strong>Task:</strong> Did the algorithms converge in all cases? What were the optimal values of parameters and how many function and gradient evaluations were required for algorithms to converge? Which settings would you recommend?</p>
 </div>
 <div id="source-code" class="section level1">
@@ -318,14 +355,23 @@ data2 = get(load(&quot;data.RData&quot;))
 head(data2)
 
 
-llik_norm = function(x, mu, sigma) {
-  n = nrow(as.matrix(x))
+# c(mu, sigma)
+neg_llik_norm = function(par) {
+  n = nrow(as.matrix(data))
   p1 = (n/2)*log(2*pi)
-  p2 = (n/2)*log(sigma^2)
-  sum = sum((x - mu)^2)
-  p3 = 1/(2*sigma^2) * sum
+  p2 = (n/2)*log(par[2]^2)
+  sum = sum((data - par[1])^2)
+  p3 = 1/(2*par[2]^2) * sum
   return(p1+p2+p3)
-}</code></pre>
+}
+
+
+
+
+optim(c(0, 1), neg_llik_norm, method = &quot;CG&quot;, hessian = TRUE)
+
+
+optim(c(0, 1), neg_llik_norm, method = &quot;BFGS&quot;, hessian = TRUE)</code></pre>
 </div>
 
 

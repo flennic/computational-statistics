@@ -171,6 +171,8 @@ neg_llik_norm = function(par) {
   return(p1+p2+p3)
 }
 
+
+
 ```
 
 **Task:** Optimize the minus log–likelihood function with initial parameters $\mu = 0$, $\sigma = 1$. Try both Conjugate Gradient method (described in the presentation handout) and BFGS (discussed in the lecture) algorithm with gradient specified and without. Why it is a bad idea to maximize likelihood rather than maximizing log–likelihood?
@@ -179,21 +181,31 @@ neg_llik_norm = function(par) {
 
 ```{r}
 
-```
+optim(c(0, 1), neg_llik_norm, method = "CG", hessian = TRUE)
 
+```
 
 **BFGS:**
 
 ```{r}
 
-optim(c(0, 1), neg_llik_norm, method = "BFGS")
+optim(c(0, 1), neg_llik_norm, method = "BFGS", hessian = TRUE)
 
 ```
 
-
-
+**Answer:** The likelihood is a product of really small values. This means that we reach the floiting point precision limits rather fast and it becomes basically impossible to calculate the likelihood at one point. Thus we use the loglikihood, because we convert the product to a (negative) sum. The make up for an optimization problem, we often use the negative loglikelihood the get rid of the negative signs.
 
 **Task:** Did the algorithms converge in all cases? What were the optimal values of parameters and how many function and gradient evaluations were required for algorithms to converge? Which settings would you recommend?
+
+**Answer:** The results can be seen in the previous exercise. The property `$par` shows the optimized parameters for $\mu$ and $\sigma$. If the algorithm converged can be found in the parameter `$convergence`. Possible (intersting) results are:
+
+- **1:** indicates that the iteration limit maxit had been reached.
+
+We can see, that...
+
+The amount of function and gradient descents can also be taken from teh outputs above. They're found in the parameter `$counts`.
+
+Therefore we recommend the following settings:
 
 # Source Code
 
