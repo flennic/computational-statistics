@@ -25,20 +25,26 @@ library(gridExtra)
 
 The file `mortality_rate.csv` contains information about mortality rates of the fruit flies during a certain period.
 
-**Task:** Import this file to R and add one more variable `LMR` to the data which is the natural logarithm of Rate. Afterwards, divide the data into training and test sets by using the following code:
+**Task:** Import this file to R and add one more variable `LMR` to the data which is the natural logarithm of Rate. Afterwards, divide the data into training and test sets.
 
-```{r, echo = FALSE}
 
+```{r}
+# Data import --------------------------------
 data = read.csv("mortality_rate.csv", sep = ";", dec = ",")
 data$LMR = log(data$Rate)
 
+
+# first 6 rows of the full log- dataset -------- 
+kable(head(data))
+
+
+
+# division of data into train and test -------
 n = dim(data)[1]
 set.seed(123456)
 id = sample(1:n, floor(n * 0.5))
 train = data[id ,]
 test = data[-id ,]
-
-kable(head(data))
 
 ```
 
@@ -46,10 +52,10 @@ kable(head(data))
 
 $$predictive MSE=\frac{1}{length(test)} \sum_{ith \  \ element \ in \ test \ set}(Ytest[i] - fYpred(X[i]))^2$$
 
-where `fYpred(X[i])` is the predicted value of `Y` if `X` is `X[i]`. Read on R’s functions for prediction so that you do not have to implement it yourself.
+where `fYpred(X[i])` is the predicted value of `Y` if `X` is `X[i]`. Read on R's functions for prediction so that you do not have to implement it yourself.
 
 ```{r}
-
+# Implementation of myMSE -------------------
 myMSE = function(lambda, pars) {
   model = loess(Y ~ X, data=pars, enp.target = lambda)
   prediction = predict(model, newdata = pars$Xtest)
@@ -64,22 +70,25 @@ myMSE = function(lambda, pars) {
 **Task:** Use a simple approach: use function `myMSE()`, training and test sets with response LMR and predictor Day and the following $\lambda$ values to estimate the predictive MSE values: $\lambda = 0.1, 0.2,...40$.
 
 ```{r}
-
+# parameters for the myMSE function ----------------------
 pars = list(X = train$Day, Y = train$LMR, Xtest = test$Day, Ytest = test$LMR)
 lambdas = seq(from = 0.1, to = 40, by = 0.1)
+
+# applying the myMSE function to all lambdas ------------
 mses = sapply(X = lambdas, FUN = myMSE, pars = pars)
 
 ```
 
 **Task:** Create a plot of the MSE values versus $\lambda$ and comment on which $\lambda$ value is optimal. How many evaluations of `myMSE()` were required (read `?optimize`) to find this value?
 
-**Answer:** It looks like the optimal $\lambda$ is between 10 and 30:
+**Answer:** From looking at the plot, it seems like the optimal $\lambda$ is between 10 and 30:
 
 ```{r, echo = FALSE}
 lambdas[which.min(mses)]
 ```
 
-is best $\lambda$ (for the given input sequence). The function was called 
+is best $\lambda$ (for the given input sequence). This minimum can also be seen at the blue point in the plot below. 
+The function was called 
 
 ```{r, echo = FALSE}
 length(lambdas)
@@ -88,11 +97,13 @@ length(lambdas)
 times.
 
 ```{r, echo = FALSE}
-
 df = data.frame(lambdas, mses)
 
 ggplot(df) +
   geom_line(aes(x = lambdas, y = mses), color = "#C70039") +
+  geom_point(aes(x = seq(0.1, 40, by = 0.1)[which.min(mses)], 
+                 y = mses[which.min(mses)], color = "min MSE"), 
+             colour = "blue")
   labs(title = "Lambdas VS MSEs", y = "MSE", x = "Lambda") +
   theme_minimal()
 
@@ -104,15 +115,30 @@ ggplot(df) +
 
 ```{r}
 
-optimize(myMSE, tol = 0.01, interval = c(0.1, 40), pars = pars)
+o = optimize(myMSE, tol = 0.01, interval = c(0.1, 40), pars = pars)
 
 ```
 
+This means the minimum could be found at a Lambda of 
+```{r} 
+o$minimum
+```
+and a mse of
+```{r} 
+o$objective
+```
 The function `myMSE()` was called 18 times. We counted the printed dots, we were to lazy to build a wrapper with a counter :).
 
 **Task:** Use `optim()` function and BFGS method with starting point $\lambda = 35$ to find the optimal $\lambda$ value. How many `myMSE()` function evaluations were required (read ?optim)? Compare the results you obtained with the results from step 5 and make conclusions.
 
-**Answer:** Only `3` iteration were used, which is lower than the number of calls we had before. We therefore think that this general-purpose optimization based on Nelder–Mead works most efficient, at least for this case. The function `optimize()` searches the whole interval using the golden selection search (description on the course slides), so it is looking for a local minima in the given interval. It uses a constant reduction factor $\alpha$. For this to work the function has to be unimodal, which means that is only has one maxima/minima (in the given interval). So it's pretty basic and, depending on $\alpha$, we need more or less iterations.
+```{r}
+
+optim(35, myMSE, method = "BFGS", pars = pars, control = list(fnscale = 1))
+
+```
+
+**Answer:** The function iterated only once at a starting value of 35 and is therefore at an optimal lambda value of 0.1719996. This means that the "real" minimum was not reached.
+The function `optimize()` searches the whole interval using the golden selection search (description on the course slides), so it is looking for a local minima in the given interval. It uses a constant reduction factor $\alpha$. For this to work the function has to be unimodal, which means that is only has one maxima/minima (in the given interval). So it's pretty basic and, depending on $\alpha$, we need more or less iterations.
 
 Newtons Method (Nelder-Mead) is memory heavy but therefore converges quickly. It computes an approximation for the Hessian and calculates the quasi–Newton condition or secant condition:
 
@@ -122,11 +148,9 @@ We want the current and the next itertion to be as close as possible. The comput
 
 $$\nabla f(\vec x) = A\vec x-\vec b = r(\vec x)$$
 
-```{r}
+The gradient is therefore used to calculate an improved lambda value. Since this is 0 at the initial lambda value, the algorithm converges. 
+In contrast to the optimize function, the minimum could not be found here. It is possible, however, that optim works much more efficiently if no 0 gradients occur.
 
-optim(35, myMSE, method = "BFGS", pars = pars, control = list(fnscale = 1))
-
-```
 
 # Question 2: Maximizing Likelihood
 
