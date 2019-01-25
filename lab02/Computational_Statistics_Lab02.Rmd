@@ -3,15 +3,15 @@ title: "Computational Statistics - Lab 02"
 author: "Maximilian Pfundstein"
 date: "`r Sys.Date()`"
 output:
+  pdf_document:
+    toc: true
+    toc_depth: 3
+    number_sections: true
   html_document:
     df_print: paged
     toc: true
     toc_float: false
     number_sections: false
-  pdf_document:
-    toc: true
-    toc_depth: 3
-    number_sections: true
 ---
 
 ```{r setup, include = FALSE}
@@ -27,11 +27,15 @@ The file `mortality_rate.csv` contains information about mortality rates of the 
 
 **Task:** Import this file to R and add one more variable `LMR` to the data which is the natural logarithm of Rate. Afterwards, divide the data into training and test sets.
 
+```{r, echo = FALSE}
 
-```{r}
 ################################################################################
 # Question 1: Optimizing a Model Param
 ################################################################################
+
+```
+
+```{r}
 
 # Data import --------------------------------
 data = read.csv("mortality_rate.csv", sep = ";", dec = ",")
@@ -120,14 +124,18 @@ o = optimize(myMSE, tol = 0.01, interval = c(0.1, 40), pars = pars)
 
 ```
 
-This means the minimum could be found at a Lambda of 
+This means the minimum could be found at a $\lambda$ of
+
 ```{r} 
 o$minimum
 ```
-and a mse of
+
+and an MSE of
+
 ```{r} 
 o$objective
 ```
+
 The function `myMSE()` was called 18 times. We counted the printed dots, we were to lazy to build a wrapper with a counter :).
 
 **Task:** Use `optim()` function and BFGS method with starting point $\lambda = 35$ to find the optimal $\lambda$ value. How many `myMSE()` function evaluations were required (read ?optim)? Compare the results you obtained with the results from step 5 and make conclusions.
@@ -154,11 +162,11 @@ In contrast to the optimize function, the minimum could not be found here. It is
 
 # Question 2: Maximizing Likelihood
 
-The file data.RData contains a sample from normal distribution with some parameters $\mu$, $\sigma$. For this question read `?optim in detail.
+The file data.RData contains a sample from normal distribution with some parameters $\mu$, $\sigma$. For this question read `?optim` in detail.
 
 **Task:** Load the data to R environment.
 
-```{r}
+```{r, echo = FALSE}
 
 ################################################################################
 # Question 2: Maximizing Likelihood
