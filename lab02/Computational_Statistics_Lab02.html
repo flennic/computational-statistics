@@ -239,9 +239,28 @@ mses = sapply(X = lambdas, FUN = myMSE, pars = pars)</code></pre>
 </div>
 <div id="question-2-maximizing-likelihood" class="section level1">
 <h1>Question 2: Maximizing Likelihood</h1>
-<p>The file data.RData contains a sample from normal distribution with some parameters <span class="math inline">\(\mu\)</span>, <span class="math inline">\(\sigma\)</span>. For this question read ?optim in detail.</p>
+<p>The file data.RData contains a sample from normal distribution with some parameters <span class="math inline">\(\mu\)</span>, <span class="math inline">\(\sigma\)</span>. For this question read `?optim in detail.</p>
 <p><strong>Task:</strong> Load the data to R environment.</p>
+<pre class="r"><code>data2 = get(load(&quot;data.RData&quot;))
+head(data2)</code></pre>
+<pre><code>## [1]  3.8554793  2.7670692  3.3384582 -2.6535340 -0.3624106  4.4326187</code></pre>
 <p><strong>Task:</strong> Write down the log-likelihood function for 100 observations and derive maximum likelihood estimators for <span class="math inline">\(\mu\)</span>, <span class="math inline">\(\sigma\)</span> analytically by setting partial derivatives to zero. Use the derived formulae to obtain parameter estimates for the loaded data.</p>
+<p>The log-likelihood function for the normal distribution is defined by:</p>
+<p><span class="math display">\[l(\mu, \sigma^2, x_1,...,x_{100}) = - \frac{n}{2}ln(2\pi)-\frac{n}{2}(\sigma^2)-\frac{1}{2\sigma^2}\sum_{j-1}^{n}(x_j-\mu)^2\]</span></p>
+<p>The estimators are:</p>
+<p><span class="math display">\[\hat\mu_n=\frac{1}{n}\sum_{j-1}^{n}x_j\]</span></p>
+<p>and</p>
+<p><span class="math display">\[\hat\sigma_n^2=\frac{1}{n}\sum_{j-1}^{n}(x_j-\hat\mu)^2\]</span></p>
+<p>Taken from <a href="https://www.statlect.com/fundamentals-of-statistics/normal-distribution-maximum-likelihood" class="uri">https://www.statlect.com/fundamentals-of-statistics/normal-distribution-maximum-likelihood</a>, not derived by hand. How the formulas can be derived can be found on the page.</p>
+<p>The implementation in R looks like the following:</p>
+<pre class="r"><code>llik_norm = function(x, mu, sigma) {
+  n = nrow(as.matrix(x))
+  p1 = (n/2)*log(2*pi)
+  p2 = (n/2)*log(sigma^2)
+  sum = sum((x - mu)^2)
+  p3 = 1/(2*sigma^2) * sum
+  return(p1+p2+p3)
+}</code></pre>
 <p><strong>Task:</strong> Optimize the minus log–likelihood function with initial parameters <span class="math inline">\(\mu = 0\)</span>, <span class="math inline">\(\sigma = 1\)</span>. Try both Conjugate Gradient method (described in the presentation handout) and BFGS (discussed in the lecture) algorithm with gradient specified and without. Why it is a bad idea to maximize likelihood rather than maximizing log–likelihood?</p>
 <p><strong>Task:</strong> Did the algorithms converge in all cases? What were the optimal values of parameters and how many function and gradient evaluations were required for algorithms to converge? Which settings would you recommend?</p>
 </div>
@@ -292,7 +311,21 @@ ggplot(df) +
 optimize(myMSE, tol = 0.01, interval = c(0.1, 40), pars = pars)
 
 
-optim(35, myMSE, method = &quot;BFGS&quot;, pars = pars, control = list(fnscale = 1))</code></pre>
+optim(35, myMSE, method = &quot;BFGS&quot;, pars = pars, control = list(fnscale = 1))
+
+
+data2 = get(load(&quot;data.RData&quot;))
+head(data2)
+
+
+llik_norm = function(x, mu, sigma) {
+  n = nrow(as.matrix(x))
+  p1 = (n/2)*log(2*pi)
+  p2 = (n/2)*log(sigma^2)
+  sum = sum((x - mu)^2)
+  p3 = 1/(2*sigma^2) * sum
+  return(p1+p2+p3)
+}</code></pre>
 </div>
 
 

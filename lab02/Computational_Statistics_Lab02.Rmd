@@ -130,13 +130,68 @@ optim(35, myMSE, method = "BFGS", pars = pars, control = list(fnscale = 1))
 
 # Question 2: Maximizing Likelihood
 
-The file data.RData contains a sample from normal distribution with some parameters $\mu$, $\sigma$. For this question read ?optim in detail.
+The file data.RData contains a sample from normal distribution with some parameters $\mu$, $\sigma$. For this question read `?optim in detail.
 
 **Task:** Load the data to R environment.
 
+```{r}
+
+data2 = get(load("data.RData"))
+head(data2)
+
+```
+
 **Task:** Write down the log-likelihood function for 100 observations and derive maximum likelihood estimators for $\mu$, $\sigma$ analytically by setting partial derivatives to zero. Use the derived formulae to obtain parameter estimates for the loaded data.
 
+The log-likelihood function for the normal distribution is defined by:
+
+$$l(\mu, \sigma^2, x_1,...,x_{100}) = - \frac{n}{2}ln(2\pi)-\frac{n}{2}(\sigma^2)-\frac{1}{2\sigma^2}\sum_{j-1}^{n}(x_j-\mu)^2$$
+
+The estimators are:
+
+$$\hat\mu_n=\frac{1}{n}\sum_{j-1}^{n}x_j$$
+
+and
+
+$$\hat\sigma_n^2=\frac{1}{n}\sum_{j-1}^{n}(x_j-\hat\mu)^2$$
+
+Taken from <https://www.statlect.com/fundamentals-of-statistics/normal-distribution-maximum-likelihood>, not derived by hand. How the formulas can be derived can be found on the page.
+
+The implementation in R looks like the following:
+
+```{r, echo = FALSE}
+
+# c(mu, sigma)
+neg_llik_norm = function(par) {
+  n = nrow(as.matrix(data))
+  p1 = (n/2)*log(2*pi)
+  p2 = (n/2)*log(par[2]^2)
+  sum = sum((data - par[1])^2)
+  p3 = 1/(2*par[2]^2) * sum
+  return(p1+p2+p3)
+}
+
+```
+
 **Task:** Optimize the minus log–likelihood function with initial parameters $\mu = 0$, $\sigma = 1$. Try both Conjugate Gradient method (described in the presentation handout) and BFGS (discussed in the lecture) algorithm with gradient specified and without. Why it is a bad idea to maximize likelihood rather than maximizing log–likelihood?
+
+**Conjugate Gradient Method:**
+
+```{r}
+
+```
+
+
+**BFGS:**
+
+```{r}
+
+optim(c(0, 1), neg_llik_norm, method = "BFGS")
+
+```
+
+
+
 
 **Task:** Did the algorithms converge in all cases? What were the optimal values of parameters and how many function and gradient evaluations were required for algorithms to converge? Which settings would you recommend?
 
