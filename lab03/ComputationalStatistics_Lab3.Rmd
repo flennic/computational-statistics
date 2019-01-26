@@ -3,15 +3,15 @@ title: "Computational Statistics - Lab 03"
 author: "Annalena Erhard (anner218) and Maximilian Pfundstein (maxpf364)"
 date: "`r Sys.Date()`"
 output:
-  pdf_document:
-    toc: true
-    toc_depth: 3
-    number_sections: true
   html_document:
     df_print: paged
     toc: true
     toc_float: false
     number_sections: false
+  pdf_document:
+    toc: true
+    toc_depth: 3
+    number_sections: true
 ---
 
 ```{r libraries, echo=FALSE, message=FALSE}
@@ -19,6 +19,7 @@ knitr::opts_chunk$set(echo = TRUE, cache = FALSE, include = TRUE, eval = TRUE)
 library(knitr)
 library(readxl)
 library(ggplot2)
+library(gridExtra)
 ```
 
 # Question 1: Cluster Sampling
@@ -188,23 +189,164 @@ ggplot(data)+
 
 **Answer:** We see that both histograms have a similar shape. This means that our sampling function is taking the size of the city into account and we created a similar distribution with a smaller subset. That is exaclty what we needed to perform the opinion pool.
 
-# Question 2: Different distributions
+# Question 2: Different Distributions
 The double exponential (Laplace) distribution is given by formula
 
 $$DE(\mu,\alpha) = \frac{\alpha}{2}e^{-\alpha|x-\mu|}$$
 
 **Task**: Write a code generating double exponential distribution $DE(0, 1)$ from $Unif(0, 1)$ by using the inverse CDF method. Explain how you obtained that code step by step. Generate `10000` random numbers from this distribution, plot the histogram and comment whether the result looks reasonable.
 
-**Answer:** What we are going to do is we sample from `unif(0,1)` and take the results and put it into the quantile function of $DE(0, 1)$. As we take the definition from [Laplace Distribution (Wikipedia)](https://en.wikipedia.org/wiki/Laplace_distribution) for the quantile function we have to keep in mind that $\alpha = \frac{1}{b}$. As we want to use this for any function, we will take any quantile function as in input to our function. Let's first define our quantile function with $\mu = 0$, $\alpha = 1$ and thus $b = \frac{1}{1} = 1$ as well:
+**Answer:** What we are going to do is we sample from `unif(0,1)` and take the results and put it into the quantile function of $DE(0, 1)$. As we take the definition from [Laplace Distribution (Wikipedia)](https://en.wikipedia.org/wiki/Laplace_distribution) for the quantile function we have to keep in mind that $\alpha = \frac{1}{b}$. Let's first define our quantile function with $\mu = 0$, $\alpha = 1$ and thus $b = \frac{1}{1} = 1$ as well:
 
-$$Q(p) = F^{-1}(p) = \mu - b*sng(p-0.5) * ln(1-2|p-0.5|)$$
+$$Q(p) = F^{-1}(p) = \mu - b*sgn(p-0.5) * ln(1-2|p-0.5|)$$
 
 With the above defined variables we obtain:
 
-$$Q(p|\mu,b) = Q(p|0,1) = -sng(p-0.5) * ln(1-2|p-0.5|)$$
+$$Q(p|\mu,b) \Rightarrow Q(p|0,1) = -sgn(p-0.5) * ln(1-2|p-0.5|)$$
+
 Where `sgn` is the [Sign Function (Wikipedia)](https://en.wikipedia.org/wiki/Sign_function).
 
+Let's implement those two functions as a start:
+
+```{r}
+
+sgn = function(x) {
+  if (x < 0) return(-1)
+  if (x > 0) return( 1)
+  return(0)
+}
+
+qdel = function(p, mu = 0, b = 1) {
+  if (p < 0 | p > 1) stop("p must be in range (0, 1)")
+  return(mu - b * sgn(p-0.5) * log(1 - 2 * abs(p - 0.5)))
+}
+
+```
+
+Next we implement a function for drawing n times.
+
+```{r}
+
+rdel = function(n = 1, mu = 0, b = 1) {
+  quantiles = replicate(n, runif(n = 1, min = 0, max = 1))
+  rdels = sapply(X = quantiles, FUN = qdel, mu = mu, b = b)
+  return(rdels)
+}
+
+```
+
+Let's look how the plot for `10000` random numbers from this distribution looks like:
+
+```{r, echo = FALSE, warning = FALSE}
+
+sample_rdel_0_1 = rdel(10000, mu = 0, b = 1)
+sample_rdel_0_2 = rdel(10000, mu = 0, b = 2)
+sample_rdel_0_4 = rdel(10000, mu = 0, b = 4)
+sample_rdel_m5_4 = rdel(10000, mu = -5, b = 4)
+
+df = data.frame(sample_rdel_0_1, sample_rdel_0_2,
+                sample_rdel_0_4, sample_rdel_m5_4)
+
+
+p1 = ggplot(df) +
+  geom_histogram(aes(x = sample_rdel_0_1),
+                 color = "#FFC300", fill = "#FFC300", binwidth = 0.01) +
+  xlim(-10, 10) + 
+  ylim(0, 60) +
+  ggtitle("RD(0, 1)") +
+  theme_minimal()
+
+p2 = ggplot(df) +
+  geom_histogram(aes(x = sample_rdel_0_2),
+                 color = "#FF5733", fill = "#FF5733", binwidth = 0.01) +
+  xlim(-10, 10) + 
+  ylim(0, 60) +
+  ggtitle("RD(0, 2)") +
+  theme_minimal()
+
+p3 = ggplot(df) +
+  geom_histogram(aes(x = sample_rdel_0_4),
+                 color = "#C70039", fill = "#C70039", binwidth = 0.01) +
+  xlim(-10, 10) + 
+  ylim(0, 60) +
+  ggtitle("RD(0, 4)") +
+  theme_minimal()
+
+p4 = ggplot(df) +
+  geom_histogram(aes(x = sample_rdel_m5_4),
+                 color = "#900C3F", fill = "#900C3F", binwidth = 0.01) +
+  xlim(-10, 10) + 
+  ylim(0, 60) +
+  ggtitle("RD(-5, 4)") +
+  theme_minimal()
+
+grid.arrange(p1, p2, p3, p4, nrow = 2)
+
+```
+
+The results look reasonable when compared to the original density function as the shape is what we would expect.
+
 **Task**: Use the Acceptance/rejection method with $DE(0, 1)$ as a majorizing density to generate $\mathcal{N}(0,1)$ variables. Explain step by step how this was done. How did you choose constant `c` in this method? Generate `2000` random numbers $\mathcal{N}(0,1)$ using your code and plot the histogram. Compute the average rejection rate `R` in the acceptance/rejection procedure. What is the expected rejection rate `ER` and how close is it to `R`? Generate `2000` numbers from $\mathcal{N}(0,1)$ using standard `rnorm()` procedure, plot the histogram and compare the obtained two histograms.
+
+**Answer:** As we have not yet created a function for the CDF $DE(\mu,\alpha)$  and PDF we will do this now and compare it to the normal distribution. We well swap $\alpha$ with $b$ to ensure consitency.
+
+**PDF:**
+
+$$f(X|\mu,\alpha) = \frac{1}{2b}e^{\frac{-|x-\mu|}{b}}$$
+
+```{r}
+
+ddel = function(x = 1, mu = 0, b = 1) {
+  return(1/(2*b) * exp(-abs(x-mu)/(b)))
+}
+
+```
+
+**CDF:**
+
+$$DE(\mu,b) = F(X|\mu,\alpha) = \frac{1}{2} + \frac{1}{2}*sgn(x-\mu) * (1-e^{-\frac{|x-\mu|}{b}})$$
+
+```{r}
+
+pdel = function(x = 1, mu = 0, b = 1) {
+  return(1/2 + 1/2 * sgn(x-mu) * (1 - exp(-(abs(x-mu))/(b))))
+}
+
+```
+
+
+Let's plot `pdel()` with  `dnorm()` and `pdel()` with  `dnorm()`:
+
+```{r, echo = FALSE}
+
+sequence = seq(from = -10, to = 10, by = 0.01)
+
+pnorm_samples = sapply(X = sequence, FUN = pnorm)
+pdel_samples = sapply(X = sequence, FUN = pdel)
+dnorm_samples = sapply(X = sequence, FUN = dnorm)
+ddel_samples = sapply(X = sequence, FUN = ddel)
+
+df = data.frame(pnorm_samples, pdel_samples, dnorm_samples, ddel_samples)
+
+ggplot(df) +
+  geom_line(aes(x = sequence, y = pnorm_samples, colour = "Normal Distribution (CDF)")) +
+  geom_line(aes(x = sequence, y = pdel_samples,  colour = "Double Exponential Distribution (CDF)")) +
+  labs(title = "dnorm() and ddel()", y = "Density",
+  x = "X", color = "Legend") +
+  scale_color_manual(values = c("#17202A", "#C70039")) +
+  theme_minimal()
+
+ggplot(df) +
+  geom_line(aes(x = sequence, y = dnorm_samples, colour = "Normal Distribution (PDF)")) +
+  geom_line(aes(x = sequence, y = ddel_samples,  colour = "Double Exponential Distribution (PDF)")) +
+  labs(title = "dnorm() and ddel()", y = "Density",
+  x = "X", color = "Legend") +
+  scale_color_manual(values = c("#17202A", "#C70039")) +
+  theme_minimal()
+
+
+```
+
 
 
 # Source Code
