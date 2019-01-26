@@ -1,46 +1,84 @@
 ---
-title: "Computational Statistics Lab 3"
-author: "Annalena Erhard(anner218)"
+title: "Computational Statistics - Lab 03"
+author: "Annalena Erhard (anner218) and Maximilian Pfundstein (maxpf364)"
 date: "24 Januar 2019"
-output: pdf_document
+output:
+  html_document:
+    df_print: paged
+    toc: true
+    toc_float: false
+    number_sections: false
+  pdf_document:
+    toc: true
+    toc_depth: 3
+    number_sections: true
 ---
 
 ```{r libraries, echo=FALSE, message=FALSE}
-knitr::opts_chunk$set(echo = TRUE, cache = TRUE)
+knitr::opts_chunk$set(echo = TRUE, cache = FALSE, include = TRUE, eval = TRUE)
+library(knitr)
 library(readxl)
 library(ggplot2)
 ```
 
-##### Question 1
-
+# Question 1: Cluster Sampling
 
 An opinion pool is assumed to be performed in several locations of Sweden by sending interviewers to this location. Of course, it is unreasonable from the ﬁnancial point of view to visit each city. Instead, a decision was done to use random sampling without replacement with the probabilities proportional to the number of inhabitants of the city to select 20 cities. Explore the ﬁle ```population.xls.``` Note that names in bold are counties, not cities.
-
-
-
-#### Task 1
 
 **Task:**
 
 Import necessary information to R.
 
-
-```{r task 1.1}
+```{r task 1.1, echo = FALSE}
 
 # reading the data in -----------------------------------
-data = read.csv("population.csv", sep = ";")
+data = read.csv("population.csv", sep = ";", encoding = "latin1")
+
+kable(head(data))
+
+```
+
+**Task:** Use a uniform random number generator to create a function that selects 1 city from the whole list by the probability scheme oﬀered above (do not use standard sampling functions present in R).
+
+```{r}
+
+# Implementation Max
+seed = 12345
+
+get_city_by_urn_wo = function(city_pool) {
+  
+  # We take the cumulative sum and then runif from 1 to max(cumulative sum).
+  # This way we respect the proportions. As we need every intermediate result,
+  # we use a loop
+  cumulative_pop_sum = 0
+  
+  for (i in 1:nrow(city_pool)) {
+    cumulative_pop_sum = cumulative_pop_sum + city_pool$Population[i]
+    city_pool$CumSum[i] = cumulative_pop_sum
+  }
+  
+  # Now we get a random value between 1 to max(cumulative sum). As larger muni-
+  # cipalities have larger ranges, this works as expected
+  selection =
+    floor(runif(n = 1, min = 1, max = city_pool$CumSum[nrow(city_pool)]))
+  
+  # Return the first city which has a greater CumSum than the selection
+  return(city_pool[city_pool$CumSum > selection,][1, c(1, 2)])
+}
 
 ```
 
 
-#### Task 2
+```{r task 1.2, eval = FALSE, echo = FALSE}
 
-**Task:**
-
-Use a uniform random number generator to create a function that selects 1 city from the whole list by the probability scheme oﬀered above (do not use standard sampling functions present in R).
-
-
-```{r task 1.2}
+# Comments:
+# - Why n if the function is supposed to select one?
+# - This does not take into account that cities with a bigger population are more
+#   likely to be selected
+# - round() somestimes rounds downwards, sometimes upwards, for correct partitioning
+#   floor() or ceil() is better
+# - Setting the seed for each drawing will result in the same number every time
+#   if the external seed supplier does not change it!
 
 sample_wo_replacement = function(n, data, seed){
   samples = numeric()
@@ -64,39 +102,63 @@ sample_wo_replacement = function(n, data, seed){
 
 #### Task 3
 
-**Task:**
-Use the function you have created in step 2 as follows:
-
+**Task:** Use the function you have created in step 2 as follows:
 (a) Apply it to the list of all cities and select one city
-
-
-```{r task 1.3.a}
-
-a = sample_wo_replacement(1,data, 12345)
-
-```
-
 (b) Remove this city from the list
-```{r task 1.3.b}
-cities = data[-a,]
-```
-
 (c) Apply this function again to the updated list of the cities 
 (d) Remove this city from the list 
 (e) ... and so on until you get exactly 20 cities.
 
-```{r task 1.3.cde}
+**Answer:** We will combine all of these steps in one function. We're lazy.
 
-rownames(cities) = 1:nrow(cities)
+```{r}
 
-while (nrow(cities) >20) {
-  a = sample_wo_replacement(1,cities, 12345)
-  cities = cities[-a,]
-  rownames(cities) = 1:nrow(cities)
-  print(nrow(cities))
+get_n_cities = function(data, n) {
+  
+  # Create a copy to not touch the original data.
+  city_pool = data
+  selected_cities = data.frame()
+  
+  # As long as we don't have n samples, get one and remove it from the pool,
+  # as we sample without replacement
+  while(nrow(selected_cities) < n) {
+    selected_city = get_city_by_urn_wo(city_pool)
+    selected_cities = rbind(selected_cities, selected_city)
+    city_pool = city_pool[!rownames(city_pool) %in% rownames(selected_cities),]
+  }
+  
+  return(selected_cities)
 }
 
+sample = get_n_cities(data, 20)
 
+```
+
+```{r task 1.3.a, eval = FALSE, echo = FALSE}
+
+city_pool = data
+selected_cities = data.frame()
+
+selected_city_id = sample_wo_replacement(1, all_cities, 12345)
+
+```
+
+```{r task 1.3.b, eval = FALSE, echo = FALSE}
+
+selected_cities = rbind(city_pool[selected_city_id,])
+city_pool = all_cities[-selected_city,]
+
+```
+
+```{r task 1.3.cde, eval = FALSE, echo = FALSE}
+
+while (length(selected_cities) < 21) {
+  selected_city_id = sample_wo_replacement(1, all_cities, 12345)
+  all_cities = all_cities[-selected_city,]
+  selected_cities = c(selected_cities, selected_city)
+}
+
+print(selected_cities)
 
 ```
 
@@ -113,14 +175,11 @@ The following cities were selected:
 
 ```{r task 1.4}
 
-cities
-
+sample
 
 ```
 
 It can be seen, that cities of all different sizes (counting the population) were selected.
-
-##### Task 5
 
 **Task :**
 Plot one histogram showing the size of all cities of the country. Plot another histogram showing the size of the 20 selected cities. Conclusions?
@@ -128,76 +187,24 @@ Plot one histogram showing the size of all cities of the country. Plot another h
 
 
 ```{r task 1.5}
-ggplot(cities)+
-  geom_histogram(aes(x = Population),bins = 15)+
+
+ggplot(sample)+
+  geom_histogram(aes(x = Population), bins = nrow(sample), color = "black", fill = "#FFC300") +
   ggtitle("Histogram of selected cities")
 
 ggplot(data)+
-  geom_histogram(aes(x = Population),bins = 15)+
+  geom_histogram(aes(x = Population), bins = nrow(data), color = "#FFC300", fill = "#FFC300") +
   ggtitle("Histogram of all cities")
-```
-
-**Answer: **
-
-Comparing both histograms it can be seen that mostly smaller cities were selected by the sampling function. The reason for that is on the one side chance and on the other side the state of mostly smaller cities existing in Sweden.
-
-
-
-
-### Question 2
-
-##### Task 1
-
-**Task: **
-
-
-
-```{r task 2.1}
 
 ```
 
+**Answer:** We see that both histograms have a similar shape. This means that our sampling function is taking the size of the city into account and we created a similar distribution with a smaller subset. That is exaclty what we needed to perform the opinion pool.
 
-##### Task 2
-
-**Task:**
-
+# Question 2: Different distributions
 
 
-```{r task 2.2}
+# Source Code
 
-
-```
-**Answer:**
-
-
-##### Task 3
-
-**Task:**
-
-
-```{r task 2.3}
-
+```{r, ref.label=knitr::all_labels(), echo = TRUE, eval = FALSE, results = 'show'}
 
 ```
-
-
-##### Task 4
-
-**Task: **
-
-
-
-
-```{r task 4}
-
-```
-
-
-
-
-
-
-
-
-
-
