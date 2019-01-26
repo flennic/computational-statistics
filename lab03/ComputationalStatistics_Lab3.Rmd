@@ -1,17 +1,17 @@
 ---
 title: "Computational Statistics - Lab 03"
 author: "Annalena Erhard (anner218) and Maximilian Pfundstein (maxpf364)"
-date: "24 Januar 2019"
+date: "`r Sys.Date()`"
 output:
+  pdf_document:
+    toc: true
+    toc_depth: 3
+    number_sections: true
   html_document:
     df_print: paged
     toc: true
     toc_float: false
     number_sections: false
-  pdf_document:
-    toc: true
-    toc_depth: 3
-    number_sections: true
 ---
 
 ```{r libraries, echo=FALSE, message=FALSE}
@@ -23,11 +23,9 @@ library(ggplot2)
 
 # Question 1: Cluster Sampling
 
-An opinion pool is assumed to be performed in several locations of Sweden by sending interviewers to this location. Of course, it is unreasonable from the ﬁnancial point of view to visit each city. Instead, a decision was done to use random sampling without replacement with the probabilities proportional to the number of inhabitants of the city to select 20 cities. Explore the ﬁle ```population.xls.``` Note that names in bold are counties, not cities.
+An opinion pool is assumed to be performed in several locations of Sweden by sending interviewers to this location. Of course, it is unreasonable from the financial point of view to visit each city. Instead, a decision was done to use random sampling without replacement with the probabilities proportional to the number of inhabitants of the city to select 20 cities. Explore the file `population.xls`. Note that names in bold are counties, not cities.
 
-**Task:**
-
-Import necessary information to R.
+**Task:** Import necessary information to R.
 
 ```{r task 1.1, echo = FALSE}
 
@@ -38,7 +36,7 @@ kable(head(data))
 
 ```
 
-**Task:** Use a uniform random number generator to create a function that selects 1 city from the whole list by the probability scheme oﬀered above (do not use standard sampling functions present in R).
+**Task:** Use a uniform random number generator to create a function that selects 1 city from the whole list by the probability scheme offered above (do not use standard sampling functions present in R).
 
 ```{r}
 
@@ -67,7 +65,6 @@ get_city_by_urn_wo = function(city_pool) {
 }
 
 ```
-
 
 ```{r task 1.2, eval = FALSE, echo = FALSE}
 
@@ -99,15 +96,13 @@ sample_wo_replacement = function(n, data, seed){
 
 ```
 
-
-#### Task 3
-
 **Task:** Use the function you have created in step 2 as follows:
-(a) Apply it to the list of all cities and select one city
-(b) Remove this city from the list
-(c) Apply this function again to the updated list of the cities 
-(d) Remove this city from the list 
-(e) ... and so on until you get exactly 20 cities.
+
+a. Apply it to the list of all cities and select one city
+b. Remove this city from the list
+c. Apply this function again to the updated list of the cities 
+d. Remove this city from the list 
+e. ... and so on until you get exactly 20 cities.
 
 **Answer:** We will combine all of these steps in one function. We're lazy.
 
@@ -162,10 +157,6 @@ print(selected_cities)
 
 ```
 
-
-
-##### Task 4
-
 **Task:**
 Run the program. Which cities were selected? What can you say about the size of the selected cities?
 
@@ -173,20 +164,17 @@ Run the program. Which cities were selected? What can you say about the size of 
 
 The following cities were selected:
 
-```{r task 1.4}
+```{r task 1.4, echo = FALSE}
 
 sample
 
 ```
 
-It can be seen, that cities of all different sizes (counting the population) were selected.
+It can be seen, that mostly cities with a population greater than the mean (`32009.25`) were drawn.
 
-**Task :**
-Plot one histogram showing the size of all cities of the country. Plot another histogram showing the size of the 20 selected cities. Conclusions?
+**Task :** Plot one histogram showing the size of all cities of the country. Plot another histogram showing the size of the 20 selected cities. Conclusions?
 
-
-
-```{r task 1.5}
+```{r task 1.5, echo = FALSE}
 
 ggplot(sample)+
   geom_histogram(aes(x = Population), bins = nrow(sample), color = "black", fill = "#FFC300") +
@@ -201,6 +189,13 @@ ggplot(data)+
 **Answer:** We see that both histograms have a similar shape. This means that our sampling function is taking the size of the city into account and we created a similar distribution with a smaller subset. That is exaclty what we needed to perform the opinion pool.
 
 # Question 2: Different distributions
+The double exponential (Laplace) distribution is given by formula
+
+$$DE(\mu,\alpha) = \frac{\alpha}{2}e^{-\alpha|x-\mu|}$$
+
+**Task**: Write a code generating double exponential distribution $DE(0, 1)$ from $Unif(0, 1)$ by using the inverse CDF method. Explain how you obtained that code step by step. Generate `10000` random numbers from this distribution, plot the histogram and comment whether the result looks reasonable.
+
+**Task**: Use the Acceptance/rejection method with $DE(0, 1)$ as a majorizing density to generate $\mathcal{N}(0,1)$ variables. Explain step by step how this was done. How did you choose constant `c` in this method? Generate `2000` random numbers $\mathcal{N}(0,1)$ using your code and plot the histogram. Compute the average rejection rate `R` in the acceptance/rejection procedure. What is the expected rejection rate `ER` and how close is it to `R`? Generate `2000` numbers from $\mathcal{N}(0,1)$ using standard `rnorm()` procedure, plot the histogram and compare the obtained two histograms.
 
 
 # Source Code
