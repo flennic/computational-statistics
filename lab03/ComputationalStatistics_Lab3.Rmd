@@ -3,15 +3,15 @@ title: "Computational Statistics - Lab 03"
 author: "Annalena Erhard (anner218) and Maximilian Pfundstein (maxpf364)"
 date: "`r Sys.Date()`"
 output:
+  pdf_document:
+    toc: true
+    toc_depth: 3
+    number_sections: true
   html_document:
     df_print: paged
     toc: true
     toc_float: false
     number_sections: false
-  pdf_document:
-    toc: true
-    toc_depth: 3
-    number_sections: true
 ---
 
 ```{r libraries, echo=FALSE, message=FALSE}
@@ -30,6 +30,10 @@ An opinion pool is assumed to be performed in several locations of Sweden by sen
 
 ```{r task 1.1, echo = FALSE}
 
+################################################################################
+# Question 1: Cluster Sampling
+################################################################################
+
 # reading the data in -----------------------------------
 data = read.csv("population.csv", sep = ";", encoding = "latin1")
 
@@ -40,9 +44,6 @@ kable(head(data))
 **Task:** Use a uniform random number generator to create a function that selects 1 city from the whole list by the probability scheme offered above (do not use standard sampling functions present in R).
 
 ```{r}
-
-# Implementation Max
-seed = 12345
 
 get_city_by_urn_wo = function(city_pool) {
   
@@ -64,36 +65,6 @@ get_city_by_urn_wo = function(city_pool) {
   # Return the first city which has a greater CumSum than the selection
   return(city_pool[city_pool$CumSum > selection,][1, c(1, 2)])
 }
-
-```
-
-```{r task 1.2, eval = FALSE, echo = FALSE}
-
-# Comments:
-# - Why n if the function is supposed to select one?
-# - This does not take into account that cities with a bigger population are more
-#   likely to be selected
-# - round() somestimes rounds downwards, sometimes upwards, for correct partitioning
-#   floor() or ceil() is better
-# - Setting the seed for each drawing will result in the same number every time
-#   if the external seed supplier does not change it!
-
-sample_wo_replacement = function(n, data, seed){
-  samples = numeric()
-  i = 1
-  while (length(samples) < n) {
-    set.seed(seed)
-     a = round(runif(n = 1, min = 1, max = nrow(data)))
-     while (a %in% samples) {
-       set.seed(seed)
-       a = round(runif(n = 1, min = 1, max = nrow(data)))
-     }
-     samples[i] = a
-     i = i+1
-  }
-  return(samples)
-}
-
 
 ```
 
@@ -130,40 +101,9 @@ sample = get_n_cities(data, 20)
 
 ```
 
-```{r task 1.3.a, eval = FALSE, echo = FALSE}
+**Task:** Run the program. Which cities were selected? What can you say about the size of the selected cities?
 
-city_pool = data
-selected_cities = data.frame()
-
-selected_city_id = sample_wo_replacement(1, all_cities, 12345)
-
-```
-
-```{r task 1.3.b, eval = FALSE, echo = FALSE}
-
-selected_cities = rbind(city_pool[selected_city_id,])
-city_pool = all_cities[-selected_city,]
-
-```
-
-```{r task 1.3.cde, eval = FALSE, echo = FALSE}
-
-while (length(selected_cities) < 21) {
-  selected_city_id = sample_wo_replacement(1, all_cities, 12345)
-  all_cities = all_cities[-selected_city,]
-  selected_cities = c(selected_cities, selected_city)
-}
-
-print(selected_cities)
-
-```
-
-**Task:**
-Run the program. Which cities were selected? What can you say about the size of the selected cities?
-
-**Answer:**
-
-The following cities were selected:
+**Answer:** The following cities were selected:
 
 ```{r task 1.4, echo = FALSE}
 
@@ -178,11 +118,11 @@ It can be seen, that mostly cities with a population greater than the mean (`320
 ```{r task 1.5, echo = FALSE}
 
 ggplot(sample)+
-  geom_histogram(aes(x = Population), bins = nrow(sample), color = "black", fill = "#FFC300") +
+  geom_histogram(aes(x = Population), bins = nrow(sample), color = "black", fill = "#C70039") +
   ggtitle("Histogram of selected cities")
 
 ggplot(data)+
-  geom_histogram(aes(x = Population), bins = nrow(data), color = "#FFC300", fill = "#FFC300") +
+  geom_histogram(aes(x = Population), bins = nrow(data), color = "#C70039", fill = "#C70039") +
   ggtitle("Histogram of all cities")
 
 ```
@@ -207,6 +147,15 @@ $$Q(p|\mu,b) \Rightarrow Q(p|0,1) = -sgn(p-0.5) * ln(1-2|p-0.5|)$$
 Where `sgn` is the [Sign Function (Wikipedia)](https://en.wikipedia.org/wiki/Sign_function).
 
 Let's implement those two functions as a start:
+
+```{r, echo = FALSE}
+
+################################################################################
+# Question 2: Different Distributions
+################################################################################
+
+```
+
 
 ```{r}
 
@@ -288,7 +237,7 @@ The results look reasonable when compared to the original density function as th
 
 **Task**: Use the Acceptance/rejection method with $DE(0, 1)$ as a majorizing density to generate $\mathcal{N}(0,1)$ variables. Explain step by step how this was done. How did you choose constant `c` in this method? Generate `2000` random numbers $\mathcal{N}(0,1)$ using your code and plot the histogram. Compute the average rejection rate `R` in the acceptance/rejection procedure. What is the expected rejection rate `ER` and how close is it to `R`? Generate `2000` numbers from $\mathcal{N}(0,1)$ using standard `rnorm()` procedure, plot the histogram and compare the obtained two histograms.
 
-**Answer:** As we have not yet created a function for the CDF $DE(\mu,\alpha)$  and PDF we will do this now and compare it to the normal distribution. We well swap $\alpha$ with $b$ to ensure consitency.
+**Answer:** As we have not yet created a function for the PDF and CDF $DE(\mu,\alpha)$ we will do this now and compare it to the normal distribution. We well swap $\alpha$ with $b$ to ensure consitency.
 
 **PDF:**
 
@@ -315,38 +264,176 @@ pdel = function(x = 1, mu = 0, b = 1) {
 ```
 
 
-Let's plot `pdel()` with  `dnorm()` and `pdel()` with  `dnorm()`:
+Let's plot `ddel()` with  `dnorm()` and `pdel()` with  `dnorm()`:
 
 ```{r, echo = FALSE}
 
 sequence = seq(from = -10, to = 10, by = 0.01)
 
-pnorm_samples = sapply(X = sequence, FUN = pnorm)
-pdel_samples = sapply(X = sequence, FUN = pdel)
 dnorm_samples = sapply(X = sequence, FUN = dnorm)
 ddel_samples = sapply(X = sequence, FUN = ddel)
+pnorm_samples = sapply(X = sequence, FUN = pnorm)
+pdel_samples = sapply(X = sequence, FUN = pdel)
 
-df = data.frame(pnorm_samples, pdel_samples, dnorm_samples, ddel_samples)
+df = data.frame(dnorm_samples, ddel_samples, pnorm_samples, pdel_samples)
 
 ggplot(df) +
-  geom_line(aes(x = sequence, y = pnorm_samples, colour = "Normal Distribution (CDF)")) +
-  geom_line(aes(x = sequence, y = pdel_samples,  colour = "Double Exponential Distribution (CDF)")) +
+  geom_line(aes(x = sequence, y = dnorm_samples,
+                colour = "Normal Distribution (PDF)")) +
+  geom_line(aes(x = sequence, y = ddel_samples,
+                colour = "Double Exponential Distribution (PDF)")) +
   labs(title = "dnorm() and ddel()", y = "Density",
   x = "X", color = "Legend") +
   scale_color_manual(values = c("#17202A", "#C70039")) +
   theme_minimal()
 
 ggplot(df) +
-  geom_line(aes(x = sequence, y = dnorm_samples, colour = "Normal Distribution (PDF)")) +
-  geom_line(aes(x = sequence, y = ddel_samples,  colour = "Double Exponential Distribution (PDF)")) +
+  geom_line(aes(x = sequence, y = pnorm_samples,
+                colour = "Normal Distribution (CDF)")) +
+  geom_line(aes(x = sequence, y = pdel_samples,
+                colour = "Double Exponential Distribution (CDF)")) +
   labs(title = "dnorm() and ddel()", y = "Density",
   x = "X", color = "Legend") +
   scale_color_manual(values = c("#17202A", "#C70039")) +
   theme_minimal()
-
 
 ```
 
+We need our sampling distribution to envelope our function to generate. Therefore we calcualte the fraction of $\frac{q(x)}{f(x)}$. This ensures our $\mathcal{N}(0,1)$ is covered and that $c \geq 1$ as defined by the rejection method.
+
+```{r}
+
+c = max(dnorm_samples / pnorm_samples)
+c
+
+```
+
+The first plot shows the distributions and the new envelope. The second plot shows the acceptance and rejection region. We can see that the function successfully envelops our distribution.
+
+```{r, echo = FALSE}
+
+df$scaled_envelop = c * df$ddel_samples
+
+ggplot(df) +
+  geom_line(aes(x = sequence, y = dnorm_samples,
+                colour = "Normal Distribution (PDF)")) +
+  geom_line(aes(x = sequence, y = ddel_samples,
+                colour = "Double Exponential Distribution (PDF)")) +
+  geom_line(aes(x = sequence, y = scaled_envelop,
+                colour = "Scaled Double Exponential Distribution (PDF)")) +
+  labs(title = "Envelope", y = "Density",
+  x = "X", color = "Legend") +
+  scale_color_manual(values = c("#17202A", "#C70039", "#581845")) +
+  theme_minimal()
+
+ggplot(df) +
+  geom_ribbon(aes(x = sequence, ymin = df$dnorm_samples, ymax = df$scaled_envelop),
+              alpha = 0.8, fill = "#DAF7A6", color = "#DAF7A6") +
+  geom_ribbon(aes(x = sequence, ymin = 0, ymax = df$dnorm_samples),
+              alpha = 0.8, fill = "#C70039", color = "#C70039") +
+  labs(title = "Acceptence and Rejection Regions", y = "Density",
+  x = "X", color = "Legend") +
+  scale_color_manual(values = c("#17202A", "#C70039", "#581845")) +
+  theme_minimal()
+
+```
+
+
+```{r, warning=FALSE}
+
+# We draw from DE(0, 1) (proposal)
+
+rs = c()
+rs_rejected = c()
+
+while (length(rs) < 2000) {
+  # Take a random sample from our proposal (x-axis)
+  z = rdel(n = 1, mu = 0, b = 1)
+  
+  # Take a unform, thus a random y value
+  u = runif(n = 1, min = 0, max = c * pdel(z))
+  
+  # Check in which region this on lies
+  if (u <= pnorm(z)) {
+    rs = c(rs, z)
+  }
+  else {
+    rs_rejected = c(rs_rejected, z)
+  }
+}
+
+```
+
+```{r, echo = FALSE, warning = FALSE}
+
+df2 = as.data.frame(rs)
+
+ggplot(df2) +
+  geom_histogram(aes(x = rs),
+                 color = "#C70039", fill = "#C70039", binwidth = 0.01) +
+  xlim(-5, 5) + 
+  ylim(0, 30) +
+  ggtitle("N(0, 1) sampled from DE(0, 1)") +
+  theme_minimal()
+
+```
+
+We can see that this is close to the desired $\mathcal{N}(0,1)$. The (average) rejection rate `R` is:
+
+```{r, echo = FALSE}
+
+length(rs_rejected) / (length(rs)+length(rs_rejected))
+
+```
+
+`c` defines the expected error rate. Note that we changed $\alpha$ and b, sso we have to take the inverse of `c`. The expected error rate therefore is:
+
+```{r, echo = FALSE}
+
+1 - 1/c
+
+```
+
+Which is very close to what we observed in our example.
+
+Last but not least let us draw from the real $\mathcal{N}(0,1)$ and compare the plots.
+
+```{r, echo = FALSE, warning = FALSE}
+
+df2$norm_samples = rnorm(n=2000)
+
+ggplot(df2) +
+  geom_histogram(aes(x = rs),
+                 color = "#C70039", fill = "#C70039", binwidth = 0.01) +
+  geom_histogram(aes(norm_samples),
+               color = "#581845", fill = "#581845", binwidth = 0.01) +
+  xlim(-5, 5) + 
+  ylim(0, 30) +
+  ggtitle("Original N(0, 1) and N(0, 1) sampled from DE(0, 1)") +
+  theme_minimal()
+
+```
+
+We observe that both histograms are almost the same and conclude that our method worked.
+
+```{r, eval = FALSE}
+
+                 .--.   _
+             .---|__| .((\=.
+          .--|===|--|/    ,(,
+          |  |===|  |\      y
+          |%%|   |  | `.__,'
+          |%%|   |  | /  \\\
+          |  |   |  |/|  | \`----.
+          |  |   |  ||\  \  |___.'_
+         _|  |   |__||,\  \-+-._.' )_
+        / |  |===|--|\  \  \      /  \
+       /  `--^---'--' `--`-'---^-'    \
+      '================================`
+
+      This is teddy bear. Be nice to teddy bear.
+      
+```
 
 
 # Source Code
