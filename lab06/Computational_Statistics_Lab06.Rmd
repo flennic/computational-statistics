@@ -1,17 +1,17 @@
 ---
 title: "Computational Statistics - Lab 06"
-author: "Maximilian Pfundstein"
+author: "Annalena Erhard (anner218) and Maximilian Pfundstein (maxpf364)"
 date: "`r Sys.Date()`"
 output:
-  pdf_document:
-    toc: true
-    toc_depth: 3
-    number_sections: true
   html_document:
     df_print: paged
     toc: true
     toc_float: false
     number_sections: false
+  pdf_document:
+    toc: true
+    toc_depth: 3
+    number_sections: true
 ---
 
 ```{r setup, include = FALSE}
@@ -286,10 +286,38 @@ From previous studies with the topic we know that the way of crossover, mutation
 
 # Question 2: EM Algorithm
 
-The data file `physical.csv` describes a behavior of two related physical processes $Y = Y (X)$
-and $Z = Z(X)$.
+The data file `physical.csv` describes a behavior of two related physical processes $Y = Y (X)$ and $Z = Z(X)$.
+
+```{r, echo = FALSE}
+
+data = read.csv("physical1.csv", sep = ",", dec = ".")
+head(data)
+
+```
+
 
 **Task:** Make a time series plot describing dependence of Z and Y versus X. Does it seem that two processes are related to each other? What can you say about the variation of the response values with respect to X?
+
+**Answer:** Yes it seems like that those two variables are related to each other as they have spakes in the same areas. It ssems like that we have some kind of cyclical behavior. The amplitude of our spikes decreases with increasing X. It looks like a damped oscillation.
+
+```{r, echo = FALSE}
+
+ggplot(data) +
+  #geom_point(aes(x = X, y = Z, color = "#Z")) +
+  geom_line(aes(x = X, y = Z, color = "#Z")) +
+  labs(title = "Dependence of Z and Y versus X", y = "Z/Y", x = "X") +
+  scale_color_manual(values = c("#C70039")) +
+  theme_minimal()
+
+ggplot(data) +
+  #geom_point(aes(x = X, y = Y, color = "#Y")) +
+  geom_line(aes(x = X, y = Y, color = "#Y")) +
+  labs(title = "Dependence of Z and Y versus X", y = "Z/Y", x = "X") +
+  scale_color_manual(values = c("#581845")) +
+  theme_minimal()
+
+```
+
 
 **Task:** Note that there are some missing values of Z in the data which implies problems in estimating models by maximum likelihood. Use the following model
 
