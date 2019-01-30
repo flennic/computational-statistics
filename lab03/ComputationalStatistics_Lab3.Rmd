@@ -3,15 +3,15 @@ title: "Computational Statistics - Lab 03"
 author: "Annalena Erhard (anner218) and Maximilian Pfundstein (maxpf364)"
 date: "`r Sys.Date()`"
 output:
+  pdf_document:
+    toc: true
+    toc_depth: 3
+    number_sections: true
   html_document:
     df_print: paged
     toc: true
     toc_float: false
     number_sections: false
-  pdf_document:
-    toc: true
-    toc_depth: 3
-    number_sections: true
 ---
 
 ```{r libraries, echo=FALSE, message=FALSE}
@@ -292,7 +292,7 @@ ggplot(df) +
                 colour = "Normal Distribution (CDF)")) +
   geom_line(aes(x = sequence, y = pdel_samples,
                 colour = "Double Exponential Distribution (CDF)")) +
-  labs(title = "dnorm() and ddel()", y = "Density",
+  labs(title = "pnorm() and pdel()", y = "Cumulative Density",
   x = "X", color = "Legend") +
   scale_color_manual(values = c("#17202A", "#C70039")) +
   theme_minimal()
