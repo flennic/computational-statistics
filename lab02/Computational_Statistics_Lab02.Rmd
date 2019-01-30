@@ -225,7 +225,7 @@ We derived them on paper.
 neg_llik_norm_prime = function(par) {
     mu_prime = -1/(par[2]) * sum(data-par[1])
     sigma_prime = 1/(2*par[2]^2) * (nrow(as.matrix(data)) -
-    (1/(par[2]^2)) * sum((data-par[1])^2))
+    (1/(par[2]^4)) * sum((data-par[1])^2))
   
   return(c(mu_prime, sigma_prime))
 }
