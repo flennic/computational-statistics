@@ -3,15 +3,15 @@ title: "Computational Statistics - Lab 02"
 author: "Annalena Erhard (anner218) and Maximilian Pfundstein (maxpf364)"
 date: "`r Sys.Date()`"
 output:
-  pdf_document:
-    toc: true
-    toc_depth: 3
-    number_sections: true
   html_document:
     df_print: paged
     toc: true
     toc_float: false
     number_sections: false
+  pdf_document:
+    toc: true
+    toc_depth: 3
+    number_sections: true
 ---
 
 ```{r setup, include = FALSE}
@@ -219,12 +219,15 @@ $$\frac{\partial\mathcal{L}(\mu, \sigma^2, x_1,...,x_{100})}{\partial\sigma^2} =
 
 We derived them on paper.
 
-```{r}
 
+```{r}
+# c(mu, sigma)
 neg_llik_norm_prime = function(par) {
-    mu_prime = 1/(par[2]) * sum(data-par[1])
-  sigma_prime = 1/(2*par[2]^2) * (nrow(as.matrix(data))) -
-    (1/(par[2]^2)) * sum((data-par[1])^2)
+    mu_prime = -1/(par[2]) * sum(data-par[1])
+  #sigma_prime = 1/(2*par[2]^2) * (nrow(as.matrix(data))) -
+  #  (1/(par[2]^2)) * sum((data-par[1])^2)
+    sigma_prime = 1/(2*par[2]^2) * (nrow(as.matrix(data)) -
+    (1/(par[2]^2)) * sum((data-par[1])^2))
   
   return(c(mu_prime, sigma_prime))
 }
