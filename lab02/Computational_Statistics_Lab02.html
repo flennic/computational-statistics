@@ -266,14 +266,12 @@ neg_llik_norm = function(par) {
 }</code></pre>
 <p><strong>Task:</strong> Optimize the minus log–likelihood function with initial parameters <span class="math inline">\(\mu = 0\)</span>, <span class="math inline">\(\sigma = 1\)</span>. Try both Conjugate Gradient method (described in the presentation handout) and BFGS (discussed in the lecture) algorithm with gradient specified and without. Why it is a bad idea to maximize likelihood rather than maximizing log–likelihood?</p>
 <p><strong>Answer:</strong> The partial derivates for the negative log-likelihood are given by:</p>
-<p><span class="math display">\[\frac{\partial\mathcal{L}(\mu, \sigma^2, x_1,...,x_{100})}{\partial\mu} = \frac{1}{\sigma^2}\sum_{j=1}^n(x_j-\mu)\]</span></p>
+<p><span class="math display">\[\frac{\partial\mathcal{L}(\mu, \sigma^2, x_1,...,x_{100})}{\partial\mu} = -\frac{1}{\sigma^2}\sum_{j=1}^n(x_j-\mu)\]</span></p>
 <p><span class="math display">\[\frac{\partial\mathcal{L}(\mu, \sigma^2, x_1,...,x_{100})}{\partial\sigma^2} = \frac{1}{2\sigma^2}\left( n-\frac{1}{\sigma^2}\sum_{j=1}^n(x_j-\mu)^2\right)\]</span></p>
 <p>We derived them on paper.</p>
 <pre class="r"><code># c(mu, sigma)
 neg_llik_norm_prime = function(par) {
     mu_prime = -1/(par[2]) * sum(data-par[1])
-  #sigma_prime = 1/(2*par[2]^2) * (nrow(as.matrix(data))) -
-  #  (1/(par[2]^2)) * sum((data-par[1])^2)
     sigma_prime = 1/(2*par[2]^2) * (nrow(as.matrix(data)) -
     (1/(par[2]^2)) * sum((data-par[1])^2))
   
@@ -473,8 +471,6 @@ neg_llik_norm = function(par) {
 # c(mu, sigma)
 neg_llik_norm_prime = function(par) {
     mu_prime = -1/(par[2]) * sum(data-par[1])
-  #sigma_prime = 1/(2*par[2]^2) * (nrow(as.matrix(data))) -
-  #  (1/(par[2]^2)) * sum((data-par[1])^2)
     sigma_prime = 1/(2*par[2]^2) * (nrow(as.matrix(data)) -
     (1/(par[2]^2)) * sum((data-par[1])^2))
   
