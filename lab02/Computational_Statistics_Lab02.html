@@ -266,13 +266,14 @@ neg_llik_norm = function(par) {
 }</code></pre>
 <p><strong>Task:</strong> Optimize the minus log–likelihood function with initial parameters <span class="math inline">\(\mu = 0\)</span>, <span class="math inline">\(\sigma = 1\)</span>. Try both Conjugate Gradient method (described in the presentation handout) and BFGS (discussed in the lecture) algorithm with gradient specified and without. Why it is a bad idea to maximize likelihood rather than maximizing log–likelihood?</p>
 <p><strong>Answer:</strong> The partial derivates for the negative log-likelihood are given by:</p>
-<p><span class="math display">\[\frac{\partial\mathcal{L}(\mu, \sigma^2, x_1,...,x_{100})}{\partial\mu} = -\frac{1}{\sigma^2}\sum_{j=1}^n(x_j-\mu)\]</span></p>
+<p><span class="math display">\[\frac{\partial\mathcal{L}(\mu, \sigma^2, x_1,...,x_{100})}{\partial\mu} = -\frac{1}{n \sigma^2}\sum_{j=1}^n(x_j-\mu)\]</span></p>
 <p><span class="math display">\[\frac{\partial\mathcal{L}(\mu, \sigma^2, x_1,...,x_{100})}{\partial\sigma^2} = \frac{1}{2\sigma^2}\left( n-\frac{1}{\sigma^2}\sum_{j=1}^n(x_j-\mu)^2\right)\]</span></p>
 <p>We derived them on paper.</p>
 <pre class="r"><code># c(mu, sigma)
 neg_llik_norm_prime = function(par) {
-    mu_prime = -1/(par[2]) * sum(data-par[1])
-    sigma_prime = 1/(2*par[2]^2) * (nrow(as.matrix(data)) -
+    n = nrow(as.matrix(data))
+    mu_prime = -1/(n*par[2]^2) * sum(data-par[1])
+    sigma_prime = 1/(2*par[2]^2) * (n -
     (1/(par[2]^2)) * sum((data-par[1])^2))
   
   return(c(mu_prime, sigma_prime))
@@ -296,17 +297,17 @@ neg_llik_norm_prime = function(par) {
 ## NULL</code></pre>
 <pre class="r"><code>optim(c(0, 1), neg_llik_norm, method = &quot;CG&quot;, gr = neg_llik_norm_prime)</code></pre>
 <pre><code>## $par
-## [1] 1.275528 2.005976
+## [1] 1.275452 2.005959
 ## 
 ## $value
 ## [1] 211.5069
 ## 
 ## $counts
 ## function gradient 
-##       99       27 
+##      309      101 
 ## 
 ## $convergence
-## [1] 0
+## [1] 1
 ## 
 ## $message
 ## NULL</code></pre>
@@ -329,14 +330,14 @@ neg_llik_norm_prime = function(par) {
 ## NULL</code></pre>
 <pre class="r"><code>optim(c(0, 1), neg_llik_norm, method = &quot;BFGS&quot;, gr = neg_llik_norm_prime)</code></pre>
 <pre><code>## $par
-## [1]  0.04194029 -3.65274395
+## [1] 1.275234 2.006185
 ## 
 ## $value
-## [1] 242.2237
+## [1] 211.507
 ## 
 ## $counts
 ## function gradient 
-##       61        7 
+##       37       26 
 ## 
 ## $convergence
 ## [1] 0
@@ -470,8 +471,9 @@ neg_llik_norm = function(par) {
 
 # c(mu, sigma)
 neg_llik_norm_prime = function(par) {
-    mu_prime = -1/(par[2]) * sum(data-par[1])
-    sigma_prime = 1/(2*par[2]^2) * (nrow(as.matrix(data)) -
+    n = nrow(as.matrix(data))
+    mu_prime = -1/(n*par[2]^2) * sum(data-par[1])
+    sigma_prime = 1/(2*par[2]^2) * (n -
     (1/(par[2]^2)) * sum((data-par[1])^2))
   
   return(c(mu_prime, sigma_prime))

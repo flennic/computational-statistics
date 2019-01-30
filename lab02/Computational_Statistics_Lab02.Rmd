@@ -213,19 +213,19 @@ neg_llik_norm = function(par) {
 
 **Answer:** The partial derivates for the negative log-likelihood are given by:
 
-$$\frac{\partial\mathcal{L}(\mu, \sigma^2, x_1,...,x_{100})}{\partial\mu} = -\frac{1}{\sigma^2}\sum_{j=1}^n(x_j-\mu)$$
+$$\frac{\partial\mathcal{L}(\mu, \sigma^2, x_1,...,x_{100})}{\partial\mu} = -\frac{1}{n \sigma^2}\sum_{j=1}^n(x_j-\mu)$$
 
 $$\frac{\partial\mathcal{L}(\mu, \sigma^2, x_1,...,x_{100})}{\partial\sigma^2} = \frac{1}{2\sigma^2}\left( n-\frac{1}{\sigma^2}\sum_{j=1}^n(x_j-\mu)^2\right)$$
 
 We derived them on paper.
 
-
 ```{r}
 # c(mu, sigma)
 neg_llik_norm_prime = function(par) {
-    mu_prime = -1/(par[2]) * sum(data-par[1])
-    sigma_prime = 1/(2*par[2]^2) * (nrow(as.matrix(data)) -
-    (1/(par[2]^4)) * sum((data-par[1])^2))
+    n = nrow(as.matrix(data))
+    mu_prime = -1/(n*par[2]^2) * sum(data-par[1])
+    sigma_prime = 1/(2*par[2]^2) * (n -
+    (1/(par[2]^2)) * sum((data-par[1])^2))
   
   return(c(mu_prime, sigma_prime))
 }
