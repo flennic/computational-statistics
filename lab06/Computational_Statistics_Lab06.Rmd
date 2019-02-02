@@ -3,15 +3,15 @@ title: "Computational Statistics - Lab 06"
 author: "Annalena Erhard (anner218) and Maximilian Pfundstein (maxpf364)"
 date: "`r Sys.Date()`"
 output:
+  pdf_document:
+    toc: true
+    toc_depth: 3
+    number_sections: true
   html_document:
     df_print: paged
     toc: true
     toc_float: false
     number_sections: false
-  pdf_document:
-    toc: true
-    toc_depth: 3
-    number_sections: true
 ---
 
 ```{r setup, include = FALSE}
@@ -303,26 +303,18 @@ head(data)
 ```{r, echo = FALSE}
 
 ggplot(data) +
-  #geom_point(aes(x = X, y = Z, color = "#Z")) +
-  geom_line(aes(x = X, y = Z, color = "#Z")) +
-  geom_line(aes(x = X, y = Y, color = "#Y")) +
+  geom_line(aes(x = X, y = Z, color = "Z")) +
+  geom_line(aes(x = X, y = Y, color = "Y")) +
   labs(title = "Dependence of Z and Y versus X", y = "Z/Y", x = "X") +
   scale_color_manual(values = c("#C70039", "#581845")) +
   theme_minimal()
-
-#ggplot(data) +
-#  #geom_point(aes(x = X, y = Y, color = "#Y")) +
-#  geom_line(aes(x = X, y = Y, color = "#Y")) +
-#  labs(title = "Dependence of Z and Y versus X", y = "Z/Y", x = "X") +
-#  scale_color_manual(values = c("#581845")) +
-#  theme_minimal()
 
 ```
 
 
 **Task:** Note that there are some missing values of Z in the data which implies problems in estimating models by maximum likelihood. Use the following model
 
-$$Y_i \sim e^{x_i/\lambda}, \quad Z_i \sim e^{x_i/2\lambda}$$
+$$Y_i \sim e^{X_i/\lambda}, \quad Z_i \sim e^{X_i/2\lambda}$$
 where $\lambda$ is some unkown parameter.
 **The goal is to derive an EM algorithm that estimates $\lambda$.**
 
@@ -344,39 +336,49 @@ It's time to calculate those values.
 
 Both $Y_i$ and $Z_i$ behave like a exponential distribution with the following $\lambda$s.
 
-$$\lambda_Y = \frac{x_i}{\lambda}, \quad \lambda_Z =\frac{x_i}{2\lambda} $$
+$$\lambda_Y = \frac{X_i}{\lambda}, \quad \lambda_Z =\frac{X_i}{2\lambda} $$
 
 So we have the following distributions:
 
-$$Y_i \sim \frac{x_i}{\lambda}  e^{-x_i/\lambda}, \quad Z_i \sim \frac{x_i}{2\lambda} e^{-x_i/2\lambda}$$
+$$Y_i \sim \frac{X_i}{\lambda}  e^{-X_i/\lambda}, \quad Z_i \sim \frac{X_i}{2\lambda} e^{-X_i/2\lambda}$$
 
 The log likelihood is the log of the product of the two distributions and thus given by:
 
-$$\mathcal{L}(\lambda|Y,Z) = ln\left(\prod_{i=1}^{n} \frac{x_i}{\lambda} e^{-x_i/\lambda}  * \frac{x_i}{2\lambda} e^{-x_i/2\lambda}\right)$$ 
+$$\mathcal{L}(\lambda|Y,Z) = ln\left(\prod_{i=1}^{n} \frac{X_i}{\lambda} e^{-X_i/\lambda}  * \frac{X_i}{2\lambda} e^{-X_i/2\lambda}\right)$$ 
 We take out the variables that do not depend on the product:
 
-$$ \mathcal{L}(\lambda|Y,Z) = ln \left( \left( \frac{1}{2\lambda^2} \right)^n  \prod_{i=1}^{n} x_i^2 e^{\frac{1}{\lambda}(x_iy_i + \frac{x_i}{2}z_i)}  \right) $$
+$$ \mathcal{L}(\lambda|Y,Z) = ln \left( \left( \frac{1}{2\lambda^2} \right)^n  \prod_{i=1}^{n} X_i^2 e^{\frac{1}{\lambda}(X_iY_i + \frac{X_i}{2}Z_i)}  \right) $$
 
 Then we resolve the log:
 
-$$\mathcal{L}(\lambda|Y,Z) = -n * ln(2\lambda^2) + 2 \sum_{i=1}^{n}ln(x_i) - \sum_{i=1}^{n}\frac{1}{\lambda} \left( x_iy_i + \frac{x_i}{2}z_i \right) $$
+$$\mathcal{L}(\lambda|Y,Z) = -n * ln(2\lambda^2) + 2 \sum_{i=1}^{n}ln(X_i) - \sum_{i=1}^{n}\frac{1}{\lambda} \left( X_iY_i + \frac{X_i}{2}Z_i \right) $$
 Next we have to calculate the expected value of or $\mathcal{L}(\lambda|Y,Z)$ as we have latent variables which we don't know even after the event. As only those are missing, we only need to take the expected value of the latent varibles, which are in $Z_i$:
 
-$$E[\mathcal{L}(\lambda|Y,Z) ] = -n * ln(2\lambda^2) + 2 \sum_{i=1}^{n}ln(x_i) - E \left[\sum_{i=1}^{n}\frac{1}{\lambda} \left( x_iy_i + \frac{x_i}{2}z_i \right)\right]$$
-$$E[\mathcal{L}(\lambda|Y,Z) ] = -n * ln(2\lambda^2) + 2 \sum_{i=1}^{n}ln(x_i) - \sum_{i=1}^{n} \frac{x_iy_i}{\lambda} - E\left[ \sum_{i=1}^{n} \frac{x_iz_i}{2\lambda} \right]$$
-Now we need to further separate our $z_i$'s as they contain known and unkown values of which we have to calculate the expected value. We assume the set $z_i$ to be ordered, where the known variables come first and the latent variables appear after that. We will use the index $\beta$ to denote the last known variables. Therefore the first latent variable is denoted by $\beta + 1$. To make it clearer which variables are meant, in addition to the index, we introduce $\Lambda$ as the subset of $z$ that only contains teh latent variables and is indexed by $\beta + 1$ to $n$. Taking this into account, we continue.
+$$E[\mathcal{L}(\lambda|Y,Z) ] = -n * ln(2\lambda^2) + 2 \sum_{i=1}^{n}ln(X_i) - E \left[\sum_{i=1}^{n}\frac{1}{\lambda} \left( X_iY_i + \frac{X_i}{2}Z_i \right)\right]$$
+$$E[\mathcal{L}(\lambda|Y,Z) ] = -n * ln(2\lambda^2) + 2 \sum_{i=1}^{n}ln(X_i) - \sum_{i=1}^{n} \frac{X_iY_i}{\lambda} - E\left[ \sum_{i=1}^{n} \frac{X_iZ_i}{2\lambda} \right]$$
+Now we need to further separate our $Z_i$'s as they contain known and unkown values of which we have to calculate the expected value. We assume the set $Z_i$ to be ordered, where the known variables come first and the latent variables appear after that. We will use the index $\beta$ to denote the last known variables. Therefore the first latent variable is denoted by $\beta + 1$. To make it clearer which variables are meant, in addition to the index, we introduce $\Lambda$ as the subset of $z$ that only contains teh latent variables and is indexed by $\beta + 1$ to $n$. Taking this into account, we continue.
 
-$$E[\mathcal{L}(\lambda|Y,Z) ] = -n * ln(2\lambda^2) + 2 \sum_{i=1}^{n}ln(x_i) - \sum_{i=1}^{n} \frac{x_iy_i}{\lambda} - \sum_{i=1}^{\beta} \frac{x_iz_i}{2\lambda} - \sum_{i=\beta +1}^{n} \frac{x_iE[\Lambda_i]}{2\lambda}$$
+$$E[\mathcal{L}(\lambda|Y,Z) ] = -n * ln(2\lambda^2) + 2 \sum_{i=1}^{n}ln(X_i) - \sum_{i=1}^{n} \frac{X_iY_i}{\lambda} - \sum_{i=1}^{\beta} \frac{X_iZ_i}{2\lambda} - \sum_{i=\beta +1}^{n} \frac{X_iE[\Lambda_i]}{2\lambda}$$
 
 As $E[\Lambda_i]$ follows the exponential distribution the expected value is given by $\frac{1}{\lambda_k}$.
 
-$$E[\Lambda_i] = \frac{1}{\lambda_k} = \frac{1}{\frac{x_i}{2\lambda_k}} = \frac{2\lambda_k}{x_i}$$
+$$E[\Lambda_i] = \frac{1}{\lambda_k} = \frac{1}{\frac{X_i}{2\lambda_k}} = \frac{2\lambda_k}{X_i}$$
 Inserting this into the above formula we get:
 
-$$E[\mathcal{L}(\lambda|Y,Z) ] = -n * ln(2\lambda^2) + 2 \sum_{i=1}^{n}ln(x_i) - \sum_{i=1}^{n} \frac{x_iy_i}{\lambda} - \sum_{i=1}^{\beta} \frac{x_iz_i}{2\lambda} - \sum_{i=\beta +1}^{n} \frac{\lambda_k}{\lambda}$$
+$$E[\mathcal{L}(\lambda|Y,Z) ] = -n * ln(2\lambda^2) + 2 \sum_{i=1}^{n}ln(X_i) - \sum_{i=1}^{n} \frac{X_iY_i}{\lambda} - \sum_{i=1}^{\beta} \frac{X_iZ_i}{2\lambda} - \sum_{i=\beta +1}^{n} \frac{\lambda_k}{\lambda}$$
 And finally we get:
 
-$$Q(\lambda,\lambda^k) = E[\mathcal{L}(\lambda|Y,Z) ] = -n * ln(2\lambda^2) + 2 \sum_{i=1}^{n}ln(x_i) - \sum_{i=1}^{n} \frac{x_iy_i}{\lambda} - \sum_{i=1}^{\beta} \frac{x_iz_i}{2\lambda} - (n - \beta\frac{\lambda_k}{\lambda})$$
+$$Q(\lambda,\lambda^k) = E[\mathcal{L}(\lambda|Y,Z) ] = -n * ln(2\lambda^2) + 2 \sum_{i=1}^{n}ln(X_i) - \sum_{i=1}^{n} \frac{X_iY_i}{\lambda} - \sum_{i=1}^{\beta} \frac{X_iZ_i}{2\lambda} - (n - \beta\frac{\lambda_k}{\lambda})$$
+
+**M-Step Calculation:**
+
+To find the new $\lambda$  which maximizes the likelihood given the expected variables we need to take the derivative in respect to $\lambda$, set the equation equal to 0 and solve for $\lambda$.
+
+$$\frac{\partial Q(\lambda,\lambda^k)}{\partial \lambda} = - \frac{2n}{\lambda} + \sum_{i=1}^{n} \frac{X_iY_i}{\lambda^2} + \frac{1}{2} \sum_{i=1}^{\beta} \frac{X_iZ_i}{\lambda^2} + (n - \beta) \frac{\lambda_k}{\lambda^2}$$
+
+Setting this to 0 and solving for lambda we receive:
+
+$$\lambda = \frac{\sum_{i=1}^{n} X_iY_i + \frac{1}{2} \sum_{i=1}^{\beta}X_iZ_i + (n-\beta)\lambda_k}{2n}$$
 
 **Task:** Implement this algorithm in `R`, use $\lambda_0 = 100$ and convergence criterion "stop if the change in $\lambda$ is less than `0.001`". What is the optimal $\lambda$ and how many iterations were required to compute it?
 
@@ -384,6 +386,7 @@ $$Q(\lambda,\lambda^k) = E[\mathcal{L}(\lambda|Y,Z) ] = -n * ln(2\lambda^2) + 2 
 
 # To keep it simple we will not pass the data to the function.
 lambda_estimate_em = function (input_iterations = 100, input_treshold = 0.0001) {
+  
   iterations_max = input_iterations
   iterations = 0
   threshold = input_treshold
@@ -403,10 +406,7 @@ lambda_estimate_em = function (input_iterations = 100, input_treshold = 0.0001) 
   X_A = data$X[A_index]
   
   beta = length(Z)
-  
-  # Return values
-  
-  
+
   for (i in 1:iterations_max) {
     iterations = iterations + 1
     
@@ -425,12 +425,16 @@ lambda_estimate_em = function (input_iterations = 100, input_treshold = 0.0001) 
 em_result = lambda_estimate_em()
 lambda_result = em_result[[1]][em_result[[2]]]
 
-```
+print(em_result)
 
+```
+So we see that it took `6` iterations to find the optimal $\lambda = 10.69565$.
 
 **Task:** Plot $E[Y]$ and $E[Z]$ versus X in the same plot as Y and Z versus X. Comment whether the computed $\lambda$ seems to be reasonable.
 
-**Answer:** Write how to calculate the expected value.
+**Answer:** Given the exponential distribution the expected values are caluclated by the following:
+
+$$E[Y] = \frac{\lambda}{X_i}, \quad E[Y] = \frac{2\lambda}{X_i}$$
 
 ```{r, echo = FALSE}
 
@@ -438,10 +442,10 @@ data$Y_E = (lambda_result)/data$X
 data$Z_E = (2*lambda_result)/data$X
 
 ggplot(data) +
-  geom_line(aes(x = X, y = Z, color = "#Z")) +
-  geom_line(aes(x = X, y = Y, color = "#Y")) +
-    geom_line(aes(x = X, y = Z_E, color = "#Z_E")) +
-  geom_line(aes(x = X, y = Y_E, color = "#Y_E")) +
+  geom_line(aes(x = X, y = Z, color = "Z")) +
+  geom_line(aes(x = X, y = Y, color = "Y")) +
+    geom_line(aes(x = X, y = Z_E, color = "E[Z]")) +
+  geom_line(aes(x = X, y = Y_E, color = "E[Y]")) +
   labs(title = "Dependence of Z, Y, E[Z] and E[Y] versus X", y = "Z/Y", x = "X") +
   scale_color_manual(values = c("#581845", "#FFC300", "#C70039", "#6091ec")) +
   theme_minimal()
