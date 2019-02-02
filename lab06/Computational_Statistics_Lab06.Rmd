@@ -4,14 +4,17 @@ author: "Annalena Erhard (anner218) and Maximilian Pfundstein (maxpf364)"
 date: "`r Sys.Date()`"
 output:
   pdf_document:
-    toc: true
+    number_sections: yes
+    toc: yes
     toc_depth: 3
-    number_sections: true
   html_document:
     df_print: paged
-    toc: true
-    toc_float: false
-    number_sections: false
+    number_sections: no
+    toc: yes
+    toc_float: no
+  word_document:
+    toc: yes
+    toc_depth: '3'
 ---
 
 ```{r setup, include = FALSE}
@@ -280,9 +283,9 @@ grid.arrange(p1, p2, p3, p4, p5, p6, nrow = 3)
 
 ```
 
-As we can see we sometimes find the (nearly) best solution, but sometimes we also get stuck in a local maximum or run out of iterations to further climb the hill. We therefore conclude, that genetic (or evolutionary algorithms) are a nice way to scrape a large feature space, but that there are problems which have to be handled. There are different ways to do the mutation, crossover and the selection, also we can define a trailing learning rate to prevent the algorithm getting stuck too early. Keep in mind that here we  only take the best individual in the current iteration, not the overall best one, so we might "delete" some better solutions here (at least that's how it is in our implementation at the moment). So in the end, like most models, the hyperparameters have a large impact on the performance of our algorithm.
+As we can see we sometimes find the (nearly) best solution, but sometimes we also get stuck in a local maximum or run out of iterations to further climb the hill. We therefore conclude, that genetic (or evolutionary algorithms) are a nice way to scrape a large feature space, but that there are problems which have to be handled. There are different ways to do the mutation, crossover and the selection, also we can define a trailing learning rate to prevent the algorithm getting stuck too early. Keep in mind that here we  only take the best individual in the current iteration, not the overall best one, so we might "delete" some better solutions here (at least that's how it is in our implementation at the moment). So in the end, like most models, the hyper parameters have a large impact on the performance of our algorithm.
 
-From previous studies within the topic we know that the way of crossover, mutation and selection have a **great** impact on the performance and can be optimized doing bitvise operations (where the significance of bits is also important). Also the whole process can be made faster if a different language and multiprocessing (or even a GPU) are taken into consideration.
+From previous studies within the topic we know that the way of crossover, mutation and selection have a **great** impact on the performance and can be optimized doing bit vise operations (where the significance of bits is also important). Also the whole process can be made faster if a different language and multiprocessing (or even a GPU) are taken into consideration.
 
 # Question 2: EM Algorithm
 
@@ -298,7 +301,7 @@ head(data)
 
 **Task:** Make a time series plot describing dependence of Z and Y versus X. Does it seem that two processes are related to each other? What can you say about the variation of the response values with respect to X?
 
-**Answer:** Yes it seems like that those two variables are related to each other as they have spikes in the same areas. It ssems like that we have some kind of cyclical behavior. The amplitude of our spikes decreases with increasing X. It looks like a damped oscillation.
+**Answer:** Yes it seems like that those two variables are related to each other as they have spikes in the same areas. It seems like that we have some kind of cyclical behavior. The amplitude of our spikes decreases with increasing X. It looks like a damped oscillation.
 
 ```{r, echo = FALSE}
 
@@ -315,7 +318,7 @@ ggplot(data) +
 **Task:** Note that there are some missing values of Z in the data which implies problems in estimating models by maximum likelihood. Use the following model
 
 $$Y_i \sim e^{X_i/\lambda}, \quad Z_i \sim e^{X_i/2\lambda}$$
-where $\lambda$ is some unkown parameter.
+where $\lambda$ is some unknown parameter.
 **The goal is to derive an EM algorithm that estimates $\lambda$.**
 
 **Answer:** For deriving the EM algorithm we have to iteratively perform the expectation (E) and maximization (M) step. The E-step consists of calculating:
@@ -324,11 +327,11 @@ where $\lambda$ is some unkown parameter.
 
 $$Q(\theta,\theta^k) = E[\mathcal{L}(\theta|Y,Z)|\theta^k, Y]$$
 
-In this example the unkown parameter is $\theta = \lambda$. The distribution $Z_i$ should now be confused with $\lambda$ as this, as the unkown parameter, is usually referenced as $Z$ as well in the literature. After that, we move on to the M-Step.
+In this example the unknown parameter is $\theta = \lambda$. The distribution $Z_i$ should not be confused with the latent variables which are usually referenced as $Z$ in the literature.
 
 **M-Step Explanation:**
 
-Here we maximize $Q(\lambda,\lambda^k)$ by taking the derivative and setting it so 0.
+Here we maximize $Q(\lambda,\lambda^k)$ by taking the derivative and setting it to 0.
 
 It's time to calculate those values.
 
@@ -353,12 +356,12 @@ Then we resolve the log:
 
 $$\mathcal{L}(\lambda|Y,Z) = -n * ln(2\lambda^2) + 2 \sum_{i=1}^{n}ln(X_i) - \sum_{i=1}^{n}\frac{1}{\lambda} \left( X_iY_i + \frac{X_i}{2}Z_i \right) $$
 
-Next we have to calculate the expected value of or $\mathcal{L}(\lambda|Y,Z)$ as we have latent variables which we don't know even after the event. As only those are missing, we only need to take the expected value of the latent varibles, which are in $Z_i$:
+Next we have to calculate the expected value of or $\mathcal{L}(\lambda|Y,Z)$ as we have latent variables which we don't know even after the event. As only those are missing, we only need to take the expected value of the latent variables, which reside in $Z_i$:
 
 $$E[\mathcal{L}(\lambda|Y,Z) ] = -n * ln(2\lambda^2) + 2 \sum_{i=1}^{n}ln(X_i) - E \left[\sum_{i=1}^{n}\frac{1}{\lambda} \left( X_iY_i + \frac{X_i}{2}Z_i \right)\right]$$
 $$E[\mathcal{L}(\lambda|Y,Z) ] = -n * ln(2\lambda^2) + 2 \sum_{i=1}^{n}ln(X_i) - \sum_{i=1}^{n} \frac{X_iY_i}{\lambda} - E\left[ \sum_{i=1}^{n} \frac{X_iZ_i}{2\lambda} \right]$$
 
-Now we need to further separate our $Z_i$'s as they contain known and unkown values of which we have to calculate the expected value. We assume the set $Z_i$ to be ordered, where the known variables come first and the latent variables appear after that. We will use the index $\beta$ to denote the last known variables. Therefore the first latent variable is denoted by $\beta + 1$. To make it clearer which variables are meant, in addition to the index, we introduce $\Lambda$ as the subset of $z$ that only contains teh latent variables and is indexed by $\beta + 1$ to $n$. Taking this into account, we continue.
+Now we need to further separate our $Z_i$'s as they contain known and unkown variables of which we have to calculate the expected value. We assume the set $Z_i$ to be ordered, where the known variables come first and the latent variables appear after that. We will use the index $\beta$ to denote the last known variable. Therefore the first latent variable is denoted by $\beta + 1$. To make it clearer which variables are meant, in addition to the index, we introduce $\Lambda$ as the subset of $Z$ that only contains the latent variables and is indexed by $\beta + 1$ to $n$. Taking this into account, we continue.
 
 $$E[\mathcal{L}(\lambda|Y,Z) ] = -n * ln(2\lambda^2) + 2 \sum_{i=1}^{n}ln(X_i) - \sum_{i=1}^{n} \frac{X_iY_i}{\lambda} - \sum_{i=1}^{\beta} \frac{X_iZ_i}{2\lambda} - \sum_{i=\beta +1}^{n} \frac{X_iE[\Lambda_i]}{2\lambda}$$
 
@@ -389,11 +392,11 @@ $$\lambda = \frac{\sum_{i=1}^{n} X_iY_i + \frac{1}{2} \sum_{i=1}^{\beta}X_iZ_i +
 ```{r}
 
 # To keep it simple we will not pass the data to the function.
-lambda_estimate_em = function (input_iterations = 100, input_treshold = 0.0001) {
+lambda_estimate_em = function (input_iterations = 100, input_threshold = 0.0001) {
   
   iterations_max = input_iterations
   iterations = 0
-  threshold = input_treshold
+  threshold = input_threshold
   
   n = nrow(data)
   lambdas = c()
@@ -436,7 +439,7 @@ So we see that it took `6` iterations to find the optimal $\lambda = 10.69565$.
 
 **Task:** Plot $E[Y]$ and $E[Z]$ versus X in the same plot as Y and Z versus X. Comment whether the computed $\lambda$ seems to be reasonable.
 
-**Answer:** Given the exponential distribution the expected values are caluclated by the following:
+**Answer:** Given the exponential distribution the expected values are calculated by the following:
 
 $$E[Y] = \frac{\lambda}{X_i}, \quad E[Y] = \frac{2\lambda}{X_i}$$
 
