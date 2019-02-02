@@ -352,10 +352,12 @@ $$ \mathcal{L}(\lambda|Y,Z) = ln \left( \left( \frac{1}{2\lambda^2} \right)^n  \
 Then we resolve the log:
 
 $$\mathcal{L}(\lambda|Y,Z) = -n * ln(2\lambda^2) + 2 \sum_{i=1}^{n}ln(X_i) - \sum_{i=1}^{n}\frac{1}{\lambda} \left( X_iY_i + \frac{X_i}{2}Z_i \right) $$
+
 Next we have to calculate the expected value of or $\mathcal{L}(\lambda|Y,Z)$ as we have latent variables which we don't know even after the event. As only those are missing, we only need to take the expected value of the latent varibles, which are in $Z_i$:
 
 $$E[\mathcal{L}(\lambda|Y,Z) ] = -n * ln(2\lambda^2) + 2 \sum_{i=1}^{n}ln(X_i) - E \left[\sum_{i=1}^{n}\frac{1}{\lambda} \left( X_iY_i + \frac{X_i}{2}Z_i \right)\right]$$
 $$E[\mathcal{L}(\lambda|Y,Z) ] = -n * ln(2\lambda^2) + 2 \sum_{i=1}^{n}ln(X_i) - \sum_{i=1}^{n} \frac{X_iY_i}{\lambda} - E\left[ \sum_{i=1}^{n} \frac{X_iZ_i}{2\lambda} \right]$$
+
 Now we need to further separate our $Z_i$'s as they contain known and unkown values of which we have to calculate the expected value. We assume the set $Z_i$ to be ordered, where the known variables come first and the latent variables appear after that. We will use the index $\beta$ to denote the last known variables. Therefore the first latent variable is denoted by $\beta + 1$. To make it clearer which variables are meant, in addition to the index, we introduce $\Lambda$ as the subset of $z$ that only contains teh latent variables and is indexed by $\beta + 1$ to $n$. Taking this into account, we continue.
 
 $$E[\mathcal{L}(\lambda|Y,Z) ] = -n * ln(2\lambda^2) + 2 \sum_{i=1}^{n}ln(X_i) - \sum_{i=1}^{n} \frac{X_iY_i}{\lambda} - \sum_{i=1}^{\beta} \frac{X_iZ_i}{2\lambda} - \sum_{i=\beta +1}^{n} \frac{X_iE[\Lambda_i]}{2\lambda}$$
@@ -363,9 +365,11 @@ $$E[\mathcal{L}(\lambda|Y,Z) ] = -n * ln(2\lambda^2) + 2 \sum_{i=1}^{n}ln(X_i) -
 As $E[\Lambda_i]$ follows the exponential distribution the expected value is given by $\frac{1}{\lambda_k}$.
 
 $$E[\Lambda_i] = \frac{1}{\lambda_k} = \frac{1}{\frac{X_i}{2\lambda_k}} = \frac{2\lambda_k}{X_i}$$
+
 Inserting this into the above formula we get:
 
 $$E[\mathcal{L}(\lambda|Y,Z) ] = -n * ln(2\lambda^2) + 2 \sum_{i=1}^{n}ln(X_i) - \sum_{i=1}^{n} \frac{X_iY_i}{\lambda} - \sum_{i=1}^{\beta} \frac{X_iZ_i}{2\lambda} - \sum_{i=\beta +1}^{n} \frac{\lambda_k}{\lambda}$$
+
 And finally we get:
 
 $$Q(\lambda,\lambda^k) = E[\mathcal{L}(\lambda|Y,Z) ] = -n * ln(2\lambda^2) + 2 \sum_{i=1}^{n}ln(X_i) - \sum_{i=1}^{n} \frac{X_iY_i}{\lambda} - \sum_{i=1}^{\beta} \frac{X_iZ_i}{2\lambda} - (n - \beta\frac{\lambda_k}{\lambda})$$
@@ -376,7 +380,7 @@ To find the new $\lambda$  which maximizes the likelihood given the expected var
 
 $$\frac{\partial Q(\lambda,\lambda^k)}{\partial \lambda} = - \frac{2n}{\lambda} + \sum_{i=1}^{n} \frac{X_iY_i}{\lambda^2} + \frac{1}{2} \sum_{i=1}^{\beta} \frac{X_iZ_i}{\lambda^2} + (n - \beta) \frac{\lambda_k}{\lambda^2}$$
 
-Setting this to 0 and solving for lambda we receive:
+Setting this to 0 and solving for $\lambda$ we receive:
 
 $$\lambda = \frac{\sum_{i=1}^{n} X_iY_i + \frac{1}{2} \sum_{i=1}^{\beta}X_iZ_i + (n-\beta)\lambda_k}{2n}$$
 
