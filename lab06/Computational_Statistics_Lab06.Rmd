@@ -298,23 +298,24 @@ head(data)
 
 **Task:** Make a time series plot describing dependence of Z and Y versus X. Does it seem that two processes are related to each other? What can you say about the variation of the response values with respect to X?
 
-**Answer:** Yes it seems like that those two variables are related to each other as they have spakes in the same areas. It ssems like that we have some kind of cyclical behavior. The amplitude of our spikes decreases with increasing X. It looks like a damped oscillation.
+**Answer:** Yes it seems like that those two variables are related to each other as they have spikes in the same areas. It ssems like that we have some kind of cyclical behavior. The amplitude of our spikes decreases with increasing X. It looks like a damped oscillation.
 
 ```{r, echo = FALSE}
 
 ggplot(data) +
   #geom_point(aes(x = X, y = Z, color = "#Z")) +
   geom_line(aes(x = X, y = Z, color = "#Z")) +
-  labs(title = "Dependence of Z and Y versus X", y = "Z/Y", x = "X") +
-  scale_color_manual(values = c("#C70039")) +
-  theme_minimal()
-
-ggplot(data) +
-  #geom_point(aes(x = X, y = Y, color = "#Y")) +
   geom_line(aes(x = X, y = Y, color = "#Y")) +
   labs(title = "Dependence of Z and Y versus X", y = "Z/Y", x = "X") +
-  scale_color_manual(values = c("#581845")) +
+  scale_color_manual(values = c("#C70039", "#581845")) +
   theme_minimal()
+
+#ggplot(data) +
+#  #geom_point(aes(x = X, y = Y, color = "#Y")) +
+#  geom_line(aes(x = X, y = Y, color = "#Y")) +
+#  labs(title = "Dependence of Z and Y versus X", y = "Z/Y", x = "X") +
+#  scale_color_manual(values = c("#581845")) +
+#  theme_minimal()
 
 ```
 
@@ -325,12 +326,129 @@ $$Y_i \sim e^{x_i/\lambda}, \quad Z_i \sim e^{x_i/2\lambda}$$
 where $\lambda$ is some unkown parameter.
 **The goal is to derive an EM algorithm that estimates $\lambda$.**
 
-**Task:** Implement this algorithm in `R`, use $\lambda_0 = 100$ and convergence criterion "stop if the change
-in $\lambda$ is less than `0.001`". What is the optimal $\lambda$ and how many iterations were required to
-compute it?
+**Answer:** For deriving the EM algorithm we have to iteratively perform the expectation (E) and maximization (M) step. The E-step consists of calculating:
+
+**E-Step Explanation:**
+
+$$Q(\theta,\theta^k) = E[\mathcal{L}(\theta|Y,Z)|\theta^k, Y]$$
+
+In this example the unkown parameter is $\theta = \lambda$. The distribution $Z_i$ should now be confused with $\lambda$ as this, as the unkown parameter, is usually referenced as $Z$ as well in the literature. After that, we move on to the M-Step.
+
+**M-Step Explanation:**
+
+Here we maximize $Q(\lambda,\lambda^k)$ by taking the derivative and setting it so 0.
+
+It's time to calculate those values.
+
+**E-Step Calculation:**
+
+Both $Y_i$ and $Z_i$ behave like a exponential distribution with the following $\lambda$s.
+
+$$\lambda_Y = \frac{x_i}{\lambda}, \quad \lambda_Z =\frac{x_i}{2\lambda} $$
+
+So we have the following distributions:
+
+$$Y_i \sim \frac{x_i}{\lambda}  e^{-x_i/\lambda}, \quad Z_i \sim \frac{x_i}{2\lambda} e^{-x_i/2\lambda}$$
+
+The log likelihood is the log of the product of the two distributions and thus given by:
+
+$$\mathcal{L}(\lambda|Y,Z) = ln\left(\prod_{i=1}^{n} \frac{x_i}{\lambda} e^{-x_i/\lambda}  * \frac{x_i}{2\lambda} e^{-x_i/2\lambda}\right)$$ 
+We take out the variables that do not depend on the product:
+
+$$ \mathcal{L}(\lambda|Y,Z) = ln \left( \left( \frac{1}{2\lambda^2} \right)^n  \prod_{i=1}^{n} x_i^2 e^{\frac{1}{\lambda}(x_iy_i + \frac{x_i}{2}z_i)}  \right) $$
+
+Then we resolve the log:
+
+$$\mathcal{L}(\lambda|Y,Z) = -n * ln(2\lambda^2) + 2 \sum_{i=1}^{n}ln(x_i) - \sum_{i=1}^{n}\frac{1}{\lambda} \left( x_iy_i + \frac{x_i}{2}z_i \right) $$
+Next we have to calculate the expected value of or $\mathcal{L}(\lambda|Y,Z)$ as we have latent variables which we don't know even after the event. As only those are missing, we only need to take the expected value of the latent varibles, which are in $Z_i$:
+
+$$E[\mathcal{L}(\lambda|Y,Z) ] = -n * ln(2\lambda^2) + 2 \sum_{i=1}^{n}ln(x_i) - E \left[\sum_{i=1}^{n}\frac{1}{\lambda} \left( x_iy_i + \frac{x_i}{2}z_i \right)\right]$$
+$$E[\mathcal{L}(\lambda|Y,Z) ] = -n * ln(2\lambda^2) + 2 \sum_{i=1}^{n}ln(x_i) - \sum_{i=1}^{n} \frac{x_iy_i}{\lambda} - E\left[ \sum_{i=1}^{n} \frac{x_iz_i}{2\lambda} \right]$$
+Now we need to further separate our $z_i$'s as they contain known and unkown values of which we have to calculate the expected value. We assume the set $z_i$ to be ordered, where the known variables come first and the latent variables appear after that. We will use the index $\beta$ to denote the last known variables. Therefore the first latent variable is denoted by $\beta + 1$. To make it clearer which variables are meant, in addition to the index, we introduce $\Lambda$ as the subset of $z$ that only contains teh latent variables and is indexed by $\beta + 1$ to $n$. Taking this into account, we continue.
+
+$$E[\mathcal{L}(\lambda|Y,Z) ] = -n * ln(2\lambda^2) + 2 \sum_{i=1}^{n}ln(x_i) - \sum_{i=1}^{n} \frac{x_iy_i}{\lambda} - \sum_{i=1}^{\beta} \frac{x_iz_i}{2\lambda} - \sum_{i=\beta +1}^{n} \frac{x_iE[\Lambda_i]}{2\lambda}$$
+
+As $E[\Lambda_i]$ follows the exponential distribution the expected value is given by $\frac{1}{\lambda_k}$.
+
+$$E[\Lambda_i] = \frac{1}{\lambda_k} = \frac{1}{\frac{x_i}{2\lambda_k}} = \frac{2\lambda_k}{x_i}$$
+Inserting this into the above formula we get:
+
+$$E[\mathcal{L}(\lambda|Y,Z) ] = -n * ln(2\lambda^2) + 2 \sum_{i=1}^{n}ln(x_i) - \sum_{i=1}^{n} \frac{x_iy_i}{\lambda} - \sum_{i=1}^{\beta} \frac{x_iz_i}{2\lambda} - \sum_{i=\beta +1}^{n} \frac{\lambda_k}{\lambda}$$
+And finally we get:
+
+$$Q(\lambda,\lambda^k) = E[\mathcal{L}(\lambda|Y,Z) ] = -n * ln(2\lambda^2) + 2 \sum_{i=1}^{n}ln(x_i) - \sum_{i=1}^{n} \frac{x_iy_i}{\lambda} - \sum_{i=1}^{\beta} \frac{x_iz_i}{2\lambda} - (n - \beta\frac{\lambda_k}{\lambda})$$
+
+**Task:** Implement this algorithm in `R`, use $\lambda_0 = 100$ and convergence criterion "stop if the change in $\lambda$ is less than `0.001`". What is the optimal $\lambda$ and how many iterations were required to compute it?
+
+```{r}
+
+# To keep it simple we will not pass the data to the function.
+lambda_estimate_em = function (input_iterations = 100, input_treshold = 0.0001) {
+  iterations_max = input_iterations
+  iterations = 0
+  threshold = input_treshold
+  
+  n = nrow(data)
+  lambdas = c()
+  lambda = NaN
+  lambda_k = 100
+  
+  Z = data$Z[!is.na(data$Z)]
+  A = data$Z[is.na(data$Z)]
+  
+  Z_index =  which(!is.na(data$Z))
+  A_index =  which(is.na(data$Z))
+  
+  X = data$X[Z_index]
+  X_A = data$X[A_index]
+  
+  beta = length(Z)
+  
+  # Return values
+  
+  
+  for (i in 1:iterations_max) {
+    iterations = iterations + 1
+    
+    # E/M-Step
+    lambda = lambda_k
+    lambda_k = (sum(data$X * data$Y) + 0.5 * sum(X * Z) +
+                  ((n - beta) * lambda_k)) / (2 * n)
+    lambdas = c(lambdas, lambda_k)
+    
+    if (abs(lambda_k - lambda) < threshold ) break
+  }
+  
+  return(list(lambdas, iterations))
+}
+
+em_result = lambda_estimate_em()
+lambda_result = em_result[[1]][em_result[[2]]]
+
+```
+
 
 **Task:** Plot $E[Y]$ and $E[Z]$ versus X in the same plot as Y and Z versus X. Comment whether the computed $\lambda$ seems to be reasonable.
 
+**Answer:** Write how to calculate the expected value.
+
+```{r, echo = FALSE}
+
+data$Y_E = (lambda_result)/data$X
+data$Z_E = (2*lambda_result)/data$X
+
+ggplot(data) +
+  geom_line(aes(x = X, y = Z, color = "#Z")) +
+  geom_line(aes(x = X, y = Y, color = "#Y")) +
+    geom_line(aes(x = X, y = Z_E, color = "#Z_E")) +
+  geom_line(aes(x = X, y = Y_E, color = "#Y_E")) +
+  labs(title = "Dependence of Z, Y, E[Z] and E[Y] versus X", y = "Z/Y", x = "X") +
+  scale_color_manual(values = c("#581845", "#FFC300", "#C70039", "#6091ec")) +
+  theme_minimal()
+
+```
+
+The value for the computed $\lambda$ seems reasonable as the expected values follow the general trend of the data.
 
 # Source Code
 
