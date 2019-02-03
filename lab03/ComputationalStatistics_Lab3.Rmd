@@ -257,10 +257,6 @@ $$DE(\mu,b) = F(X|\mu,\alpha) = \frac{1}{2} + \frac{1}{2}*sgn(x-\mu) * (1-e^{-\f
 
 ```{r}
 
-f_de = function(mu, alpha, x){
-  (alpha/2)*exp(-alpha * abs(x - mu))
-}
-
 pdel = function(x = 1, mu = 0, b = 1) {
   return(1/2 + 1/2 * sgn(x-mu) * (1 - exp(-abs(x-mu)/b)))
 }
