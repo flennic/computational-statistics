@@ -161,13 +161,13 @@ Let's implement those two functions as a start:
 
 sgn = function(x) {
   if (x < 0) return(-1)
-  if (x > 0) return( 1)
-  return(0)
+  return(1)
 }
 
 qdel = function(p, mu = 0, b = 1) {
   if (p < 0 | p > 1) stop("p must be in range (0, 1)")
-  return(mu - b * sgn(p-0.5) * log(1 - 2 * abs(p - 0.5)))
+  if (p <= 0.5) return(mu + b * log(2 * p))
+  return (mu - b * log(2 - 2 * p))
 }
 
 ```
