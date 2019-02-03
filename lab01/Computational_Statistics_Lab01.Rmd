@@ -3,15 +3,15 @@ title: "Computational Statistics - Lab 01"
 author: "Annalena Erhard (anner218) and Maximilian Pfundstein (maxpf364)"
 date: "`r Sys.Date()`"
 output:
+  pdf_document:
+    toc: true
+    toc_depth: 3
+    number_sections: true
   html_document:
     df_print: paged
     toc: true
     toc_float: false
     number_sections: false
-  pdf_document:
-    toc: true
-    toc_depth: 3
-    number_sections: true
 ---
 
 ```{r setup, include = FALSE}
@@ -40,7 +40,7 @@ if (x1-x2 == 1/12) {
 
 ```
 
-```{r}
+```{r, eval = TRUE}
 
 x1 = 1
 x2 = 1/2
@@ -62,7 +62,19 @@ if (x1-x2 == 1/2) {
 
 1. The first substraction is not wrong - it is perfectly working as defined in [IEEE_754](https://en.wikipedia.org/wiki/IEEE_754) which is a commonly used definition for floating point numbers. To make a long strory short: You have an infinite amount of real numbers for instance between $0.0$ and $1.0$ but just 32 or 64 bits for the represetation (so $2^{32}$ states or $2^{64}$ states) so it's impossible to represent every number (t.ex. try writing down 1/3 in the decimal system, at one point you simply must stop). The second substraction does not have a floating point error as you can represent multiples of the power of two in the binary system $2^{-1} = 0.5$.
 
-2. You cannot get rid of the "problem", just use more bits for representing the numbers until you have the desired precision or use/write a class which can handle a specific amount of numbers behind the decimal point (which will be slower for sure).
+2. You can either just use more bits for representing the numbers until you have the desired precision or use/write a class which can handle a specific amount of numbers behind the decimal point (which will be slower for sure). Or it can be handled by the following code snippet:
+
+```{r, eval = TRUE}
+x1 = 1/3
+x2 = 1/4
+
+if (all.equal(x1-x2, 1/12)) {
+  print("Substraction is correct.")
+} else {
+  print("Substraction is wrong.")
+}
+
+```
 
 # Question 2: Derivative
 
