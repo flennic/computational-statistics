@@ -298,7 +298,6 @@ head(data)
 
 ```
 
-
 **Task:** Make a time series plot describing dependence of Z and Y versus X. Does it seem that two processes are related to each other? What can you say about the variation of the response values with respect to X?
 
 **Answer:** Yes it seems like that those two variables are related to each other as they have spikes in the same areas. It seems like that we have some kind of cyclical behavior. The amplitude of our spikes decreases with increasing X. It looks like a damped oscillation.
