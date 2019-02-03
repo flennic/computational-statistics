@@ -3,15 +3,15 @@ title: "Computational Statistics - Lab 03"
 author: "Annalena Erhard (anner218) and Maximilian Pfundstein (maxpf364)"
 date: "`r Sys.Date()`"
 output:
+  pdf_document:
+    toc: true
+    toc_depth: 3
+    number_sections: true
   html_document:
     df_print: paged
     toc: true
     toc_float: false
     number_sections: false
-  pdf_document:
-    toc: true
-    toc_depth: 3
-    number_sections: true
 ---
 
 ```{r libraries, echo=FALSE, message=FALSE}
@@ -257,8 +257,12 @@ $$DE(\mu,b) = F(X|\mu,\alpha) = \frac{1}{2} + \frac{1}{2}*sgn(x-\mu) * (1-e^{-\f
 
 ```{r}
 
+f_de = function(mu, alpha, x){
+  (alpha/2)*exp(-alpha * abs(x - mu))
+}
+
 pdel = function(x = 1, mu = 0, b = 1) {
-  return(1/2 + 1/2 * sgn(x-mu) * (1 - exp(-(abs(x-mu))/(b))))
+  return(1/2 + 1/2 * sgn(x-mu) * (1 - exp(-abs(x-mu)/b)))
 }
 
 ```
@@ -303,7 +307,7 @@ We need our sampling distribution to envelope our function to generate. Therefor
 
 ```{r}
 
-c = max(dnorm_samples / pnorm_samples)
+c = max(dnorm_samples / ddel_samples)
 c
 
 ```
@@ -351,7 +355,7 @@ while (length(rs) < 2000) {
   z = rdel(n = 1, mu = 0, b = 1)
   
   # Take a unform, thus a random y value
-  u = runif(n = 1, min = 0, max = c * pdel(z))
+  u = runif(n = 1, min = 0, max = c * ddel(z))
   
   # Check in which region this on lies
   if (u <= pnorm(z)) {
@@ -378,23 +382,23 @@ ggplot(df2) +
 
 ```
 
-We can see that this is close to the desired $\mathcal{N}(0,1)$. The (average) rejection rate `R` is:
+We can see that this is close to the desired $\mathcal{N}(0,1)$. The observed rejection rate `R` given by:
 
-```{r, echo = FALSE}
+```{r, echo = TRUE}
 
 length(rs_rejected) / (length(rs)+length(rs_rejected))
 
 ```
 
-`c` defines the expected error rate. Note that we changed $\alpha$ and b, sso we have to take the inverse of `c`. The expected error rate therefore is:
+As `c` defines the scaling factor of the areas, we have to compare the factors for the expected error rate:
 
-```{r, echo = FALSE}
+```{r, echo = TRUE}
 
 1 - 1/c
 
 ```
 
-Which is very close to what we observed in our example.
+Which is close to what we observed in our example. The small difference can be explained be the "low" sample size of `2000` samples.
 
 Last but not least let us draw from the real $\mathcal{N}(0,1)$ and compare the plots.
 
