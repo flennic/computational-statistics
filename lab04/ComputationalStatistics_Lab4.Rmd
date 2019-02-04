@@ -20,6 +20,7 @@ library(knitr)
 library(readxl)
 library(ggplot2)
 library(gridExtra)
+library(coda)
 set.seed(12345)
 ```
 
@@ -34,6 +35,8 @@ interested (**NOT** part of the Lab) this constant can be found by applying inte
 multiple times and equals 120.
 
 1. Use Metropolis–Hastings algorithm to generate samples from this distribution by using proposal distribution as log–normal $LN(X_t,1)$, take some starting point. Plot the chain you obtained as a time series plot. What can you guess about the convergence of the chain? If there is a burn–in period, what can be the size of this period?
+
+**Answer:** First we will define the original function with the constant set to get a brief overview how the function actually looks like. We also define the given function without the constant, as we're going to us it later as the target distribution. We use the function without the constant to show that Metropilis-Hastings works without knowing the constant. As random samplings can actually give an $x$ outside of the scope of the function, we will set all values of $x \leq 0$ to a relatively small value.
 
 ```{r}
 
@@ -65,6 +68,8 @@ ggplot(plotdf) +
 
 ```
 
+The following code chunk defines the Metropolis-Hastings algorithm. The correction factor `c` is used to handle the asymmetry in the proposal function. The code is commented.
+
 ```{r}
 
 #' Metropolis Hasting Algorithm
@@ -72,12 +77,14 @@ ggplot(plotdf) +
 #' @param n Number of samples from the target distribution.
 #' @param x_0 Initial state from Pi. 
 #' @param b Burn-in steps to remove from samples.
+#' @param proposal Selects the proposal function.
+#' @param keep_burnin Decides if to keep the samples during the burn-in period.
 #'
 #' @return Returns a list containing samples.
 #' @export
 #'
 #' @examples
-metropolis_hasting = function(n = 1, x_0 = 1, b = 50, proposal = "lnorm",
+metropolis_hastings = function(n = 1, x_0 = 1, b = 50, proposal = "lnorm",
                               keep_burnin = FALSE) {
   
   # Vectors to store the samples in
@@ -139,11 +146,13 @@ metropolis_hasting = function(n = 1, x_0 = 1, b = 50, proposal = "lnorm",
 
 ```
 
+For the lognormal distribution as the proposal we selected a starting point which is far from the converging value to illistrate the burn-in period. We can see that we reach convergence rather quickly after around `8` iterations. We increased the limit to `10` to be sure to get into the area of the converging value.
+
 ```{r, echo = FALSE}
 
 burnin = 10
 
-results = metropolis_hasting(100, x_0 = 40, b = burnin, proposal = "lnorm",
+results = metropolis_hastings(100, x_0 = 40, b = burnin, proposal = "lnorm",
                              keep_burnin = TRUE)
 
 plotdf = data.frame(index = 1:length(results), values = results)
@@ -157,9 +166,11 @@ ggplot(plotdf) +
 
 ```
 
+The following plot shows `10.000` samples with $x_0 = 5$ as a starting point and burn-in iterations set to `100`.
+
 ```{r, echo = FALSE, warning = FALSE}
 
-results = metropolis_hasting(10000, x_0 = 5, b = 100, proposal = "lnorm")
+results = metropolis_hastings(10000, x_0 = 5, b = 100, proposal = "lnorm")
 
 plotdf = data.frame(results)
 
@@ -172,17 +183,32 @@ ggplot(plotdf) +
 
 ```
 
-
-**Answer:**
-
-- Convergence
-- Burn in size
-
 2. Perform Step 1 by using the chi–square distribution $\chi ^2(\lfloor X_t+1 \rfloor)$ as a proposal distribution, where $\lfloor x \rfloor$ is the floor function, meaning the integer part of $x$ for positive $x$, i.e. $\lfloor 2.95 \rfloor = 2.$
+
+**Answer:** The trace plot shows the burn-in period for the chi-square distribution. We see that it takes quite longer to achieve convergence. We set the burn-in iterations to `75` to be sure to converge.
+
+```{r, echo = FALSE}
+
+burnin = 75
+
+results = metropolis_hastings(300, x_0 = 500, b = burnin, proposal = "chisquared", keep_burnin = TRUE)
+
+plotdf = data.frame(index = 1:length(results), values = results)
+
+ggplot(plotdf) +
+  geom_line(aes(x = index, y = values), color = "#6091ec") +
+  labs(title = "Traceplot For The Burn-In Period (burnin = 75)", y = "X*",
+  x = "Iteration", color = "Legend") +
+  geom_vline(xintercept = burnin, color = "#C70039") + 
+  theme_minimal()
+
+```
+
+Again you can see  `10.000` samples with $x_0 = 5$ as a starting point and burn-in iterations set to `75`.
 
 ```{r, echo = FALSE, warning = FALSE}
 
-results = metropolis_hasting(10000, x_0 = 5, b = 100, proposal = "chisquared")
+results = metropolis_hastings(10000, x_0 = 5, b = 100, proposal = "chisquared")
 
 plotdf = data.frame(results)
 
@@ -195,28 +221,48 @@ ggplot(plotdf) +
 
 ```
 
-```{r, echo = FALSE}
-
-burnin = 100
-
-results = metropolis_hasting(300, x_0 = 500, b = burnin, proposal = "chisquared", keep_burnin = TRUE)
-
-plotdf = data.frame(index = 1:length(results), values = results)
-
-ggplot(plotdf) +
-  geom_line(aes(x = index, y = values), color = "#6091ec") +
-  labs(title = "Traceplot For The Burn-In Period (burnin = 100)", y = "X*",
-  x = "Iteration", color = "Legend") +
-  geom_vline(xintercept = burnin, color = "#C70039") + 
-  theme_minimal()
-
-```
-
 3. Compare the results of Steps 1 and 2 and make conclusions.
 
-**Answer:** They look almost the same. We assume as long as the proposal distribution mostly covers the target distribution the Metropolis-Hasting works quite well.
+**Answer:** The samples seem to actually be taken from the real distribution and in this context ist doesn't matter which proposal distribution we take. Comparing the burn-in times we see that it seems to take longer for the chi-squared proposal to converge. We have to keep in mind that this mostly depends on the initial state of the MCMC. It's not so easy to take an initial value which is far of from the converging value as we get values around `0` as the functions have a really low density which makes it quite hard to actually calcualte `c` and $\alpha$. As long as we take an initial state not too far off from a low density, we shoudl be fine, as the algorithm automatically avoids really low density regions.
+
+We assume as long as the proposal distribution mostly covers the target distribution and the initial state is selected quite reqsonable (which is not always the case in the "real world") the Metropolis-Hastings works quite well.
 
 4. Generate 10 MCMC sequences using the generator from Step 2 and starting points 1, 2, ..., or 10. Use the Gelman–Rubin method to analyze convergence of these sequences.
+
+**Answer:** The following output is based three sets of multiple sequences (with starting points $1...10$). The first set of sequences uses `5`, the second `10` and the last uses `50` iterations. We can see that the Upper C.I. (at `95%` confidence) converges towards `1` which indicates that the set has converged. This works by comparing the variance of the sequences within a set. As more iterations are performed, the MCMC depends less on the starting point until it finally holds no more information about that. This is when the Gelman-Ruby factor is near `1`.
+
+```{r, echo = FALSE}
+
+results5 = list()
+results10 = list()
+results50 = list()
+k = 10
+
+for (i in 1:k) {
+  results5[[i]] = mcmc(metropolis_hastings(5, x_0 = i, b = 0,
+                                   proposal = "chisquared", keep_burnin = TRUE))
+}
+
+for (i in 1:k) {
+  results10[[i]] = mcmc(metropolis_hastings(10, x_0 = i, b = 0,
+                                   proposal = "chisquared", keep_burnin = TRUE))
+}
+
+for (i in 1:k) {
+  results50[[i]] = mcmc(metropolis_hastings(50, x_0 = i, b = 0,
+                                   proposal = "chisquared", keep_burnin = TRUE))
+}
+
+mcmc_list5 = mcmc.list(results5)
+gelman.diag(mcmc_list5)
+
+mcmc_list10 = mcmc.list(results10)
+gelman.diag(mcmc_list10)
+
+mcmc_list50 = mcmc.list(results50)
+gelman.diag(mcmc_list50)
+
+```
 
 5. Estimate
 
