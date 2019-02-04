@@ -1,0 +1,80 @@
+---
+title: "Computational Statistics - Lab 05"
+author: "Annalena Erhard (anner218) and Maximilian Pfundstein (maxpf364)"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    df_print: paged
+    toc: true
+    toc_float: false
+    number_sections: false
+  pdf_document:
+    toc: true
+    toc_depth: 3
+    number_sections: true
+---
+
+```{r libraries, echo=FALSE, message=FALSE}
+knitr::opts_chunk$set(echo = TRUE, cache = FALSE, include = TRUE, eval = TRUE)
+library(knitr)
+library(readxl)
+library(ggplot2)
+library(gridExtra)
+```
+
+# Question 1: Hypothesis testing
+
+In 1970, the US Congress instituted a random selection process for the military draft. All 366 possible birth dates were placed in plastic capsules in a rotating drum and were selected one by one. The first date drawn from the drum received draft number one, the second date drawn received draft number two, etc. Then, eligible men were drafted in the order given by the draft number of their birth date. In a truly random lottery there should be no relationship between the date and the draft number. Your task is to investigate whether or not the draft numbers were randomly selected. The draft numbers (Y=Draft No) sorted by day of year (X=Day of year) are given in the file ```lottery.xls```.
+
+
+```{r read data}
+
+lottery = read_xls("lottery.xls")
+
+```
+
+### 1. Make a scatterplot of Y versus X and conclude whether the lottery looks random. 
+
+```{r, echo = FALSE}
+
+ggplot(lottery)+
+  geom_point(aes(x = Day_of_year, y = Draft_No))
+
+```
+
+**Answer:**
+
+In the plot, it the lottery appears to be random, because of the relatively even distribution of the points over the area.
+
+### 2. Compute an estimate $\hat{Y} $ of the expected response as a function of $X$ by using a loess smoother (use loess()), put the curve $\hat{Y} $ versus $X$ in the previous graph and state again whether the lottery looks random.
+
+
+```{r}
+
+#
+```
+
+```{r, echo = FALSE}
+
+
+```
+
+
+
+
+# Question 2: Bootstrap, jackknife and confidence intervals
+
+
+
+```{r}
+
+
+```
+
+
+
+# Source Code
+
+```{r, ref.label=knitr::all_labels(), echo = TRUE, eval = FALSE, results = 'show'}
+
+```
