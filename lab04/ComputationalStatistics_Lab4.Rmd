@@ -4,14 +4,17 @@ author: "Annalena Erhard (anner218) and Maximilian Pfundstein (maxpf364)"
 date: "`r Sys.Date()`"
 output:
   pdf_document:
-    toc: true
+    number_sections: yes
+    toc: yes
     toc_depth: 3
-    number_sections: true
   html_document:
     df_print: paged
-    toc: true
-    toc_float: false
-    number_sections: false
+    number_sections: no
+    toc: yes
+    toc_float: no
+  word_document:
+    toc: yes
+    toc_depth: '3'
 ---
 
 ```{r libraries, echo=FALSE, message=FALSE}
@@ -146,7 +149,7 @@ metropolis_hastings = function(n = 1, x_0 = 1, b = 50, proposal = "lnorm",
 
 ```
 
-For the lognormal distribution as the proposal we selected a starting point which is far from the converging value to illistrate the burn-in period. We can see that we reach convergence rather quickly after around `8` iterations. We increased the limit to `10` to be sure to get into the area of the converging value.
+For the lognormal distribution as the proposal we selected a starting point which is far from the converging value to illustrate the burn-in period. We can see that we reach convergence rather quickly after around `8` iterations. We increased the limit to `10` to be sure to get into the area of the converging value.
 
 ```{r, echo = FALSE}
 
@@ -223,9 +226,9 @@ ggplot(plotdf) +
 
 3. Compare the results of Steps 1 and 2 and make conclusions.
 
-**Answer:** The samples seem to actually be taken from the real distribution and in this context ist doesn't matter which proposal distribution we take. Comparing the burn-in times we see that it seems to take longer for the chi-squared proposal to converge. We have to keep in mind that this mostly depends on the initial state of the MCMC. It's not so easy to take an initial value which is far of from the converging value as we get values around `0` as the functions have a really low density which makes it quite hard to actually calcualte `c` and $\alpha$. As long as we take an initial state not too far off from a low density, we shoudl be fine, as the algorithm automatically avoids really low density regions.
+**Answer:** The samples seem to actually be taken from the real distribution and in this context it doesn't matter which proposal distribution we take. Comparing the burn-in times we see that it seems to take longer for the chi-squared proposal to converge. We have to keep in mind that this mostly depends on the initial state of the MCMC. It's not so easy to take an initial value which is far of from the converging value as we get values around `0` as the functions have a really low density which makes it quite hard to actually calculate `c` and $\alpha$. As long as we take an initial state not too far off from a low density, we should be fine, as the algorithm automatically avoids really low density regions.
 
-We assume as long as the proposal distribution mostly covers the target distribution and the initial state is selected quite reqsonable (which is not always the case in the "real world") the Metropolis-Hastings works quite well.
+We assume as long as the proposal distribution mostly covers the target distribution and the initial state is selected quite reasonable (which is not always the case in the "real world") the Metropolis-Hastings works quite well.
 
 4. Generate 10 MCMC sequences using the generator from Step 2 and starting points 1, 2, ..., or 10. Use the Gelman–Rubin method to analyze convergence of these sequences.
 
@@ -306,7 +309,7 @@ sum(f_integrate(valid_samples_chisquared) * diff / df(valid_samples_chisquared))
 
 6. The distribution generated is in fact a gamma distribution. Look in the literature and define the actual value of the integral. Compare it with the one you obtained.
 
-**Answer:** As we know it's a gamma distribution where the integral over `D` is `1` and we also know the constant `C` given from above, we know that the integral has to add upp to $1 * 120 = 120$.
+**Answer:** As we know it's a gamma distribution where the integral over `D` is `1` and we also know the constant `C` given from above, we know that the integral has to add up to $1 * 120 = 120$.
 
 **TODO:** Check out and write down the real gamma distribution mentioned here.
 
@@ -322,7 +325,7 @@ The instrument used to measure the concentration had certain accuracy; this is w
 
 1. Import the data to R and plot the dependence of Y on X. What kind of model is reasonable to use here?
 
-2. A researcher has decided to use the following (random–walk) Bayesian model (n=numberof observations, $\vec{\mu} = (\mu_1,...,\mu_n)$ are unknown parameters):
+2. A researcher has decided to use the following (random–walk) Bayesian model (n=number of observations, $\vec{\mu} = (\mu_1,...,\mu_n)$ are unknown parameters):
 
 $$Y_i = \mathcal{N}(\mu_i, \text{variance} = 0.2), \quad i=1,...,n$$
 where the prior is
