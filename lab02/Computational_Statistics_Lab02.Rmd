@@ -3,15 +3,15 @@ title: "Computational Statistics - Lab 02"
 author: "Annalena Erhard (anner218) and Maximilian Pfundstein (maxpf364)"
 date: "`r Sys.Date()`"
 output:
+  pdf_document:
+    toc: true
+    toc_depth: 3
+    number_sections: true
   html_document:
     df_print: paged
     toc: true
     toc_float: false
     number_sections: false
-  pdf_document:
-    toc: true
-    toc_depth: 3
-    number_sections: true
 ---
 
 ```{r setup, include = FALSE}
@@ -55,7 +55,7 @@ test = data[-id ,]
 
 **Task:** Write your own function `myMSE()` that for given parameters $\lambda$ and list `pars` containing vectors `X`, `Y`, `Xtest`, `Ytest` fits a LOESS model with response `Y` and predictor `X` using `loess()` function with penalty $\lambda$ (parameter `enp.target` in `loess()`) and then predicts the model for `Xtest`. The function should compute the predictive MSE, print it and return as a result. The predictive MSE is the mean square error of the prediction on the testing data. It is defined by the following Equation (for you to implement):
 
-$$predictive MSE=\frac{1}{length(test)} \sum_{ith \  \ element \ in \ test \ set}(Ytest[i] - fYpred(X[i]))^2$$
+$$\text{predictive MSE}=\frac{1}{\text{length(test)}} \sum_{\text{ith element in test set}}(Y_{test}[i] - fY_{pred}(X[i]))^2$$
 
 where `fYpred(X[i])` is the predicted value of `Y` if `X` is `X[i]`. Read on R's functions for prediction so that you do not have to implement it yourself.
 
