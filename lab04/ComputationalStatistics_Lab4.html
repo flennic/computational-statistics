@@ -329,6 +329,28 @@ metropolis_hastings = function(n = 1, x_0 = 1, b = 50, proposal = &quot;lnorm&qu
 <li>Estimate</li>
 </ol>
 <p><span class="math display">\[\int_{0}^{\infty} x f(x)dx \]</span> using the samples from Steps 1 and 2.</p>
+<pre class="r"><code>f_integrate = function(x) {
+  return(x * df(x))
+}
+
+valid_samples_lnorm = results_lnorm[!is.na(results_lnorm)]
+
+b = max(valid_samples_lnorm)
+a = min(valid_samples_lnorm)
+diff = b - a
+
+sum(f_integrate(valid_samples_lnorm) * diff / df(valid_samples_lnorm)) /
+  length(valid_samples_lnorm)</code></pre>
+<pre><code>## [1] 58.75335</code></pre>
+<pre class="r"><code>valid_samples_chisquared = results_chisquared[!is.na(results_chisquared)]
+
+b = max(valid_samples_chisquared)
+a = min(valid_samples_chisquared)
+diff = b - a
+
+sum(f_integrate(valid_samples_chisquared) * diff / df(valid_samples_chisquared)) /
+  length(valid_samples_chisquared)</code></pre>
+<pre><code>## [1] 121.3373</code></pre>
 <ol start="6" style="list-style-type: decimal">
 <li>The distribution generated is in fact a gamma distribution. Look in the literature and define the actual value of the integral. Compare it with the one you obtained.</li>
 </ol>
@@ -487,13 +509,13 @@ ggplot(plotdf) +
   theme_minimal()
 
 
-results = metropolis_hastings(10000, x_0 = 5, b = 100, proposal = &quot;lnorm&quot;)
+results_lnorm = metropolis_hastings(10000, x_0 = 5, b = 100, proposal = &quot;lnorm&quot;)
 
-plotdf = data.frame(results)
+plotdf = data.frame(results_lnorm)
 
 ggplot(plotdf) +
-  geom_histogram(aes(x = results),
-                 color = &quot;#000000&quot;, fill = &quot;#C70039&quot;, bins = length(results)/100) +
+  geom_histogram(aes(x = results_lnorm),
+                 color = &quot;#000000&quot;, fill = &quot;#C70039&quot;, bins = length(results_lnorm)/100) +
   labs(title = &quot;Samples From Target Function Using Normal Proposal&quot;, y = &quot;Density&quot;,
   x = &quot;X&quot;, color = &quot;Legend&quot;) +
   theme_minimal()
@@ -513,13 +535,13 @@ ggplot(plotdf) +
   theme_minimal()
 
 
-results = metropolis_hastings(10000, x_0 = 5, b = 100, proposal = &quot;chisquared&quot;)
+results_chisquared = metropolis_hastings(10000, x_0 = 5, b = 100, proposal = &quot;chisquared&quot;)
 
-plotdf = data.frame(results)
+plotdf = data.frame(results_chisquared)
 
 ggplot(plotdf) +
-  geom_histogram(aes(x = results),
-                 color = &quot;#000000&quot;, fill = &quot;#C70039&quot;, bins = length(results)/100) +
+  geom_histogram(aes(x = results_chisquared),
+                 color = &quot;#000000&quot;, fill = &quot;#C70039&quot;, bins = length(results_chisquared)/100) +
   labs(title = &quot;Samples From Target Function Using Chi-Squared Proposal&quot;, y = &quot;Density&quot;,
   x = &quot;X&quot;, color = &quot;Legend&quot;) +
   theme_minimal()
@@ -553,6 +575,31 @@ gelman.diag(mcmc_list10)
 
 mcmc_list50 = mcmc.list(results50)
 gelman.diag(mcmc_list50)
+
+
+f_integrate = function(x) {
+  return(x * df(x))
+}
+
+valid_samples_lnorm = results_lnorm[!is.na(results_lnorm)]
+
+b = max(valid_samples_lnorm)
+a = min(valid_samples_lnorm)
+diff = b - a
+
+sum(f_integrate(valid_samples_lnorm) * diff / df(valid_samples_lnorm)) /
+  length(valid_samples_lnorm)
+
+
+
+valid_samples_chisquared = results_chisquared[!is.na(results_chisquared)]
+
+b = max(valid_samples_chisquared)
+a = min(valid_samples_chisquared)
+diff = b - a
+
+sum(f_integrate(valid_samples_chisquared) * diff / df(valid_samples_chisquared)) /
+  length(valid_samples_chisquared)
 
 
 # Loading RData

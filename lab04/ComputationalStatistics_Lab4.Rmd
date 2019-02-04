@@ -170,13 +170,13 @@ The following plot shows `10.000` samples with $x_0 = 5$ as a starting point and
 
 ```{r, echo = FALSE, warning = FALSE}
 
-results = metropolis_hastings(10000, x_0 = 5, b = 100, proposal = "lnorm")
+results_lnorm = metropolis_hastings(10000, x_0 = 5, b = 100, proposal = "lnorm")
 
-plotdf = data.frame(results)
+plotdf = data.frame(results_lnorm)
 
 ggplot(plotdf) +
-  geom_histogram(aes(x = results),
-                 color = "#000000", fill = "#C70039", bins = length(results)/100) +
+  geom_histogram(aes(x = results_lnorm),
+                 color = "#000000", fill = "#C70039", bins = length(results_lnorm)/100) +
   labs(title = "Samples From Target Function Using Normal Proposal", y = "Density",
   x = "X", color = "Legend") +
   theme_minimal()
@@ -208,13 +208,13 @@ Again you can see  `10.000` samples with $x_0 = 5$ as a starting point and burn-
 
 ```{r, echo = FALSE, warning = FALSE}
 
-results = metropolis_hastings(10000, x_0 = 5, b = 100, proposal = "chisquared")
+results_chisquared = metropolis_hastings(10000, x_0 = 5, b = 100, proposal = "chisquared")
 
-plotdf = data.frame(results)
+plotdf = data.frame(results_chisquared)
 
 ggplot(plotdf) +
-  geom_histogram(aes(x = results),
-                 color = "#000000", fill = "#C70039", bins = length(results)/100) +
+  geom_histogram(aes(x = results_chisquared),
+                 color = "#000000", fill = "#C70039", bins = length(results_chisquared)/100) +
   labs(title = "Samples From Target Function Using Chi-Squared Proposal", y = "Density",
   x = "X", color = "Legend") +
   theme_minimal()
@@ -268,6 +268,38 @@ gelman.diag(mcmc_list50)
 
 $$\int_{0}^{\infty} x f(x)dx $$
 using the samples from Steps 1 and 2.
+
+```{r}
+
+f_integrate = function(x) {
+  return(x * df(x))
+}
+
+valid_samples_lnorm = results_lnorm[!is.na(results_lnorm)]
+
+b = max(valid_samples_lnorm)
+a = min(valid_samples_lnorm)
+diff = b - a
+
+sum(f_integrate(valid_samples_lnorm) * diff / df(valid_samples_lnorm)) /
+  length(valid_samples_lnorm)
+
+
+```
+
+```{r}
+
+valid_samples_chisquared = results_chisquared[!is.na(results_chisquared)]
+
+b = max(valid_samples_chisquared)
+a = min(valid_samples_chisquared)
+diff = b - a
+
+sum(f_integrate(valid_samples_chisquared) * diff / df(valid_samples_chisquared)) /
+  length(valid_samples_chisquared)
+
+```
+
 
 6. The distribution generated is in fact a gamma distribution. Look in the literature and define the actual value of the integral. Compare it with the one you obtained.
 
