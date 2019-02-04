@@ -3,15 +3,15 @@ title: "Computational Statistics - Lab 04"
 author: "Annalena Erhard (anner218) and Maximilian Pfundstein (maxpf364)"
 date: "`r Sys.Date()`"
 output:
-  pdf_document:
-    toc: true
-    toc_depth: 3
-    number_sections: true
   html_document:
     df_print: paged
     toc: true
     toc_float: false
     number_sections: false
+  pdf_document:
+    toc: true
+    toc_depth: 3
+    number_sections: true
 ---
 
 ```{r libraries, echo=FALSE, message=FALSE}
@@ -20,6 +20,7 @@ library(knitr)
 library(readxl)
 library(ggplot2)
 library(gridExtra)
+set.seed(12345)
 ```
 
 # Question 1: Computations with Metropolis-Hastings
@@ -43,7 +44,7 @@ f = function(x) {
 
 # Target function
 df = function(x) {
-  if (sum(c(x) <= 0) > 0) stop("x must be larger than 0.")
+  if (sum(c(x) <= 0) > 0) x = 0.0001
   return(x^5 * exp(-x))
 }
 
@@ -57,14 +58,12 @@ real_f = f(sequence)
 plotdf = data.frame(sequence, real_f)
 
 ggplot(plotdf) +
-  geom_line(aes(x = sequence, y = real_f), color = "#7da0ff") +
+  geom_line(aes(x = sequence, y = real_f), color = "#6091ec") +
   labs(title = "Target Density Function", y = "Density",
   x = "X", color = "Legend") +
   theme_minimal()
 
 ```
-
-
 
 ```{r}
 
@@ -72,32 +71,50 @@ ggplot(plotdf) +
 #'
 #' @param n Number of samples from the target distribution.
 #' @param x_0 Initial state from Pi. 
-#' @param b Burn-in steps before taking samples.
+#' @param b Burn-in steps to remove from samples.
 #'
-#' @return Returns a list containing the burned and normal samples.
+#' @return Returns a list containing samples.
 #' @export
 #'
 #' @examples
-metropolis_hasting = function(n = 1, x_0 = 1, b = 50) {
+metropolis_hasting = function(n = 1, x_0 = 1, b = 50, proposal = "lnorm",
+                              keep_burnin = FALSE) {
   
-  # Vectors to store the samples in.
-  burn_in_samples = c()
+  # Vectors to store the samples in
   samples = c()
   
   # Samples from proposel from the random walk (MC)
   xt = x_0
   xt_1 = x_0
   
-  walk = function(burn) {
-    # Generate proposal state
-    x_star = rlnorm(n = 1, meanlog = xt, sdlog = 1)
+  while (length(samples) < n) {
     
-    # Calculate correction factor C
-    c = dlnorm(xt_1, meanlog = xt, sdlog = 1) /
+    # Generate proposal state
+    if (proposal == "lnorm") {
+      x_star = rlnorm(n = 1, meanlog = log(xt), sdlog = 1)
+      
+      # Calculate correction factor C
+      c = dlnorm(xt_1, meanlog = xt, sdlog = 1) /
       dlnorm(x_star, meanlog = xt, sdlog = 1)
+    }
+    else if (proposal == "chisquared") {
+      x_star = rchisq(n = 1, df = floor(xt))
+      
+       # Calculate correction factor C
+      c = dchisq(x = xt_1, df = floor(xt)) /
+      dchisq(x_star, df = floor(xt))
+    }
+    else {
+      stop("Invalid proposal.")
+    }
     
     # Calculate acceptance probability alpha
-    alpha = min(1, df(x_star)/df(xt_1))
+    if (df(xt_1) <= 0) {
+      alpha = 0
+    }
+    else {
+      alpha = min(1, df(x_star)/df(xt_1) * c)
+    }
     
     # Generate u from uniform
     u = runif(n = 1, min = 0, max = 1)
@@ -105,59 +122,99 @@ metropolis_hasting = function(n = 1, x_0 = 1, b = 50) {
     # Decide if to accept or reject the proposal
     if (u <= alpha) {
       # Accept
-      xt_1 <<- xt
-      xt <<- x_star
-      
-      # Depending on if we're still buring save in different vector
-      if (burn) {
-        burn_in_samples <<- c(burn_in_samples, x_star)
-      }
-      else {
-        samples <<- c(samples, x_star)
-      }
+      xt_1 = xt
+      xt = x_star
+      samples = c(samples, x_star)
     }
     else {
       # Reject
-      xt <<- xt_1
+      xt = xt_1
     }
   }
   
-  # Burn-in period
-  while (length(burn_in_samples) < b) {
-    walk(TRUE)
-  }
-  
-  # Draw real samples
-  while (length(samples) < n) {
-    walk(FALSE)
-  }
-  
-  # Return the burned and normal samples
-  return(list(samples = samples, burn_in_samples = burn_in_samples))
+  # Return samples
+  if (keep_burnin) return(samples)
+  return(samples[b+1:length(samples)])
 }
-
-results = metropolis_hasting(10000, x_0 = 5, b = 100)
 
 ```
 
 ```{r, echo = FALSE}
 
-plotdf = data.frame(results$samples)
+burnin = 10
+
+results = metropolis_hasting(100, x_0 = 40, b = burnin, proposal = "lnorm",
+                             keep_burnin = TRUE)
+
+plotdf = data.frame(index = 1:length(results), values = results)
 
 ggplot(plotdf) +
-  geom_histogram(aes(x = results.samples),
-                 color = "#000000", fill = "#C70039", bins = length(results$samples)/100) +
-  labs(title = "Samples From Target Function", y = "Density",
+  geom_line(aes(x = index, y = values), color = "#6091ec") +
+  labs(title = "Traceplot For The Burn-In Period (burnin = 10)", y = "X*",
+  x = "Iteration", color = "Legend") +
+  geom_vline(xintercept = burnin, color = "#C70039") + 
+  theme_minimal()
+
+```
+
+```{r, echo = FALSE, warning = FALSE}
+
+results = metropolis_hasting(10000, x_0 = 5, b = 100, proposal = "lnorm")
+
+plotdf = data.frame(results)
+
+ggplot(plotdf) +
+  geom_histogram(aes(x = results),
+                 color = "#000000", fill = "#C70039", bins = length(results)/100) +
+  labs(title = "Samples From Target Function Using Normal Proposal", y = "Density",
   x = "X", color = "Legend") +
   theme_minimal()
 
 ```
 
 
+**Answer:**
+
+- Convergence
+- Burn in size
 
 2. Perform Step 1 by using the chi–square distribution $\chi ^2(\lfloor X_t+1 \rfloor)$ as a proposal distribution, where $\lfloor x \rfloor$ is the floor function, meaning the integer part of $x$ for positive $x$, i.e. $\lfloor 2.95 \rfloor = 2.$
 
+```{r, echo = FALSE, warning = FALSE}
+
+results = metropolis_hasting(10000, x_0 = 5, b = 100, proposal = "chisquared")
+
+plotdf = data.frame(results)
+
+ggplot(plotdf) +
+  geom_histogram(aes(x = results),
+                 color = "#000000", fill = "#C70039", bins = length(results)/100) +
+  labs(title = "Samples From Target Function Using Chi-Squared Proposal", y = "Density",
+  x = "X", color = "Legend") +
+  theme_minimal()
+
+```
+
+```{r, echo = FALSE}
+
+burnin = 100
+
+results = metropolis_hasting(300, x_0 = 500, b = burnin, proposal = "chisquared", keep_burnin = TRUE)
+
+plotdf = data.frame(index = 1:length(results), values = results)
+
+ggplot(plotdf) +
+  geom_line(aes(x = index, y = values), color = "#6091ec") +
+  labs(title = "Traceplot For The Burn-In Period (burnin = 100)", y = "X*",
+  x = "Iteration", color = "Legend") +
+  geom_vline(xintercept = burnin, color = "#C70039") + 
+  theme_minimal()
+
+```
+
 3. Compare the results of Steps 1 and 2 and make conclusions.
+
+**Answer:** They look almost the same. We assume as long as the proposal distribution mostly covers the target distribution the Metropolis-Hasting works quite well.
 
 4. Generate 10 MCMC sequences using the generator from Step 2 and starting points 1, 2, ..., or 10. Use the Gelman–Rubin method to analyze convergence of these sequences.
 
