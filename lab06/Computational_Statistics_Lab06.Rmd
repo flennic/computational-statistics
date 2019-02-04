@@ -227,7 +227,8 @@ best6 = as.data.frame(genetic6$best)
 
 p1 = ggplot(df) +
   geom_line(aes(x = sequence, y = f.sequence.), color = "#C70039") +
-  geom_point(aes(x = genetic1.population, y = f.genetic1.population.), data = population1, color = "black",
+  geom_point(aes(x = genetic1.population, y = f.genetic1.population.),
+             data = population1, color = "black",
             fill = "#FFC300", shape = 21, size = 2, stroke = 1) +
   geom_point(aes(x = cx, y = cy), data = best1, color = "black",
             fill = "#7BA9FF", shape = 21, size = 2, stroke = 1) +
@@ -236,7 +237,8 @@ p1 = ggplot(df) +
 
 p2 = ggplot(df) +
   geom_line(aes(x = sequence, y = f.sequence.), color = "#C70039") +
-  geom_point(aes(x = genetic2.population, y = f.genetic2.population.), data = population2, color = "black",
+  geom_point(aes(x = genetic2.population, y = f.genetic2.population.),
+             data = population2, color = "black",
             fill = "#FFC300", shape = 21, size = 2, stroke = 1) +
   geom_point(aes(x = cx, y = cy), data = best2, color = "black",
             fill = "#7BA9FF", shape = 21, size = 2, stroke = 1) +
@@ -245,7 +247,8 @@ p2 = ggplot(df) +
 
 p3 = ggplot(df) +
   geom_line(aes(x = sequence, y = f.sequence.), color = "#C70039") +
-  geom_point(aes(x = genetic3.population, y = f.genetic3.population.), data = population3, color = "black",
+  geom_point(aes(x = genetic3.population, y = f.genetic3.population.),
+             data = population3, color = "black",
             fill = "#FFC300", shape = 21, size = 2, stroke = 1) +
   geom_point(aes(x = cx, y = cy), data = best3, color = "black",
             fill = "#7BA9FF", shape = 21, size = 2, stroke = 1) +
@@ -254,7 +257,8 @@ p3 = ggplot(df) +
 
 p4 = ggplot(df) +
   geom_line(aes(x = sequence, y = f.sequence.), color = "#C70039") +
-  geom_point(aes(x = genetic4.population, y = f.genetic4.population.), data = population4, color = "black",
+  geom_point(aes(x = genetic4.population, y = f.genetic4.population.),
+             data = population4, color = "black",
             fill = "#FFC300", shape = 21, size = 2, stroke = 1) +
   geom_point(aes(x = cx, y = cy), data = best4, color = "black",
             fill = "#7BA9FF", shape = 21, size = 2, stroke = 1) +
@@ -263,7 +267,8 @@ p4 = ggplot(df) +
 
 p5 = ggplot(df) +
   geom_line(aes(x = sequence, y = f.sequence.), color = "#C70039") +
-  geom_point(aes(x = genetic5.population, y = f.genetic5.population.), data = population5, color = "black",
+  geom_point(aes(x = genetic5.population, y = f.genetic5.population.),
+             data = population5, color = "black",
             fill = "#FFC300", shape = 21, size = 2, stroke = 1) +
   geom_point(aes(x = cx, y = cy), data = best5, color = "black",
             fill = "#7BA9FF", shape = 21, size = 2, stroke = 1) +
@@ -272,7 +277,8 @@ p5 = ggplot(df) +
 
 p6 = ggplot(df) +
   geom_line(aes(x = sequence, y = f.sequence.), color = "#C70039") +
-  geom_point(aes(x = genetic6.population, y = f.genetic6.population.), data = population6, color = "black",
+  geom_point(aes(x = genetic6.population, y = f.genetic6.population.),
+             data = population6, color = "black",
             fill = "#FFC300", shape = 21, size = 2, stroke = 1) +
   geom_point(aes(x = cx, y = cy), data = best6, color = "black",
             fill = "#7BA9FF", shape = 21, size = 2, stroke = 1) +
