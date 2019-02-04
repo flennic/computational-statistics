@@ -313,6 +313,7 @@ metropolis_hastings = function(n = 1, x_0 = 1, b = 50, proposal = &quot;lnorm&qu
 <li>Generate 10 MCMC sequences using the generator from Step 2 and starting points 1, 2, …, or 10. Use the Gelman–Rubin method to analyze convergence of these sequences.</li>
 </ol>
 <p><strong>Answer:</strong> The following output is based three sets of multiple sequences (with starting points <span class="math inline">\(1...10\)</span>). The first set of sequences uses <code>5</code>, the second <code>10</code> and the last uses <code>50</code> iterations. We can see that the Upper C.I. (at <code>95%</code> confidence) converges towards <code>1</code> which indicates that the set has converged. This works by comparing the variance of the sequences within a set. As more iterations are performed, the MCMC depends less on the starting point until it finally holds no more information about that. This is when the Gelman-Ruby factor is near <code>1</code>.</p>
+<p><strong>TODO:</strong> Implement also the formulas from the slides.</p>
 <pre><code>## Potential scale reduction factors:
 ## 
 ##      Point est. Upper C.I.
@@ -351,9 +352,12 @@ diff = b - a
 sum(f_integrate(valid_samples_chisquared) * diff / df(valid_samples_chisquared)) /
   length(valid_samples_chisquared)</code></pre>
 <pre><code>## [1] 121.3373</code></pre>
+<p><strong>TODO:</strong> The lnorm returns only half of the integral. Check out why (on purpose or if there is a reason).</p>
 <ol start="6" style="list-style-type: decimal">
 <li>The distribution generated is in fact a gamma distribution. Look in the literature and define the actual value of the integral. Compare it with the one you obtained.</li>
 </ol>
+<p><strong>Answer:</strong> As we know it’s a gamma distribution where the integral over <code>D</code> is <code>1</code> and we also know the constant <code>C</code> given from above, we know that the integral has to add upp to <span class="math inline">\(1 * 120 = 120\)</span>.</p>
+<p><strong>TODO:</strong> Check out and write down the real gamma distribution mentioned here.</p>
 </div>
 <div id="question-2-gibbs-sampling" class="section level1">
 <h1>Question 2: Gibbs Sampling</h1>

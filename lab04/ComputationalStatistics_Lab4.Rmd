@@ -3,15 +3,15 @@ title: "Computational Statistics - Lab 04"
 author: "Annalena Erhard (anner218) and Maximilian Pfundstein (maxpf364)"
 date: "`r Sys.Date()`"
 output:
+  pdf_document:
+    toc: true
+    toc_depth: 3
+    number_sections: true
   html_document:
     df_print: paged
     toc: true
     toc_float: false
     number_sections: false
-  pdf_document:
-    toc: true
-    toc_depth: 3
-    number_sections: true
 ---
 
 ```{r libraries, echo=FALSE, message=FALSE}
@@ -231,6 +231,8 @@ We assume as long as the proposal distribution mostly covers the target distribu
 
 **Answer:** The following output is based three sets of multiple sequences (with starting points $1...10$). The first set of sequences uses `5`, the second `10` and the last uses `50` iterations. We can see that the Upper C.I. (at `95%` confidence) converges towards `1` which indicates that the set has converged. This works by comparing the variance of the sequences within a set. As more iterations are performed, the MCMC depends less on the starting point until it finally holds no more information about that. This is when the Gelman-Ruby factor is near `1`.
 
+**TODO:** Implement also the formulas from the slides.
+
 ```{r, echo = FALSE}
 
 results5 = list()
@@ -300,8 +302,13 @@ sum(f_integrate(valid_samples_chisquared) * diff / df(valid_samples_chisquared))
 
 ```
 
+**TODO:** The lnorm returns only half of the integral. Check out why (on purpose or if there is a reason).
 
 6. The distribution generated is in fact a gamma distribution. Look in the literature and define the actual value of the integral. Compare it with the one you obtained.
+
+**Answer:** As we know it's a gamma distribution where the integral over `D` is `1` and we also know the constant `C` given from above, we know that the integral has to add upp to $1 * 120 = 120$.
+
+**TODO:** Check out and write down the real gamma distribution mentioned here.
 
 # Question 2: Gibbs Sampling
 
