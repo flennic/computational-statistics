@@ -33,9 +33,7 @@ Consider the following probability density function:
 
 $$f(x) \propto x^5e^{-x}, \quad x > 0.$$
 
-You can see that the distribution is known up to some constant of proportionality. If you are
-interested (**NOT** part of the Lab) this constant can be found by applying integration by parts
-multiple times and equals 120.
+You can see that the distribution is known up to some constant of proportionality. If you are interested (**NOT** part of the Lab) this constant can be found by applying integration by parts multiple times and equals 120.
 
 1. Use Metropolis–Hastings algorithm to generate samples from this distribution by using proposal distribution as log–normal $LN(X_t,1)$, take some starting point. Plot the chain you obtained as a time series plot. What can you guess about the convergence of the chain? If there is a burn–in period, what can be the size of this period?
 
@@ -332,12 +330,7 @@ where $x_i$ are our samples. As the decomposed left-side function is just $x$, t
 
 ```{r}
 
-f_integrate = function(x) {
-  return(x * df(x))
-}
-
 valid_samples_lnorm = results_lnorm[!is.na(results_lnorm)]
-
 sum(valid_samples_lnorm) / length(valid_samples_lnorm)
 
 ```
@@ -345,7 +338,6 @@ sum(valid_samples_lnorm) / length(valid_samples_lnorm)
 ```{r}
 
 valid_samples_chisquared = results_chisquared[!is.na(results_chisquared)]
-
 sum(valid_samples_chisquared) / length(valid_samples_chisquared)
 
 
@@ -362,8 +354,7 @@ $$\int_{0}^{\infty} x f(x)dx = E[\Gamma(6,1)] * c = 6 * 120 = 720$$
 
 # Question 2: Gibbs Sampling
 
-concentration of a certain chemical was measured in a water sample, and the result was stored
-in the data `chemical.RData` having the following variables:
+concentration of a certain chemical was measured in a water sample, and the result was stored in the data `chemical.RData` having the following variables:
 
 - $X:$ day of the measurement
 - $Y:$ measured concentration of the chemical.
@@ -371,6 +362,27 @@ in the data `chemical.RData` having the following variables:
 The instrument used to measure the concentration had certain accuracy; this is why the measurements can be treated as noisy. Your purpose is to restore the expected concentration values.
 
 1. Import the data to R and plot the dependence of Y on X. What kind of model is reasonable to use here?
+
+**Answer:** It looks like that a random walk using a porposal distribution might fit this graph as the starting points seems fo be way of but after a period of time the graph seems to converge and oscillate around the converged value as we have seen in the exercise before. 
+
+```{r, echo = FALSE}
+
+# Loading RData
+load("chemical.RData")
+data = data.frame(X, Y)
+head(data)
+
+```
+
+```{r, echo = FALSE}
+
+ggplot(data) +
+  geom_line(aes(x = X, y = Y), color = "#c70039") +
+  labs(title = "Dependence from Concentration on Day of Measurement", y = "Concentration",  x = "Day of Measurement", color = "Legend") +
+  theme_minimal()
+
+```
+
 
 2. A researcher has decided to use the following (random–walk) Bayesian model (n=number of observations, $\vec{\mu} = (\mu_1,...,\mu_n)$ are unknown parameters):
 
@@ -382,6 +394,17 @@ $$p(\mu_1) = 1$$
 $$p(\mu_{i+1}|\mu_i) = \mathcal{N}(\mu_i, 0.2), i=1,...,n1.$$
 
 Present the formulae showing the likelihood $p(\vec{Y}|\vec{\mu})$ and the prior $p(\vec{\mu})$. **Hint:** a chain rule can be used here $p(\vec{\mu}) = p(\mu_1)p(\mu_2|\mu_1)p(\mu_3|\mu_2)...p(\mu_n|\mu_n1)$
+
+**Answer:** Using the chain rule, we get the formulas for the likelihood and the prior.
+
+The formula for the likelihood looks is given by:
+
+$$\prod_{i=1}^{n}Y_i = \mathcal{N}(\mu_1|0.2) * \mathcal{N}(\mu_2|0.2) * \: ... \: * \mathcal{N}(\mu_n|0.2)$$
+
+The formula for the prior is given by:
+
+$$p(\vec{\mu}) = 1 * \mathcal{N}(\mu_1|0.2) * \mathcal{N}(\mu_2|0.2) * \: ... \: * \mathcal{N}(\mu_{n-1}|0.2)$$
+
 
 3. Use Bayes’ Theorem to get the posterior up to a constant proportionality, and then find out the distributions of $(\mu_i|\vec{\mu}_{-i},\vec{Y})$, where $\mu_{-i}$ is a vector containing all $\mu$ values except of $\mu_{i}$.
 
@@ -398,17 +421,6 @@ $$e^{-\frac{1}{d}\left( (x-a)^2 + (x-b)^2 + (x-c)^2 \right)} \propto e^{-\frac{(
 4. Use the distributions derived in Step 3 to implement a Gibbs sampler that uses $\vec{\mu}^{\,0} = 0,...,0$ as a starting point. Run the Gibbs sampler to obtain 1000 values of $\vec{\mu}$ and then compute the expected value of $\vec{\mu}$ versus X and Y versus X in the same graph. Does it seem that you have managed to remove the noise? Does it seem that the expected value of $\vec{\mu}$ can catch the true underlying dependence between Y and X?
 
 5. Make a trace plot for $\mu_n$ and comment on the burn–in period and convergence.
-
-
-
-```{r}
-
-# Loading RData
-#data2 = get(load("data.RData"))
-#head(data2)
-
-```
-
 
 
 # Source Code
