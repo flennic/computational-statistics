@@ -253,6 +253,24 @@ ddel = function(x = 1, mu = 0, b = 1) {
 
 **CDF:**
 
+The CDF can be derived from the PDF by dividing it into two cases:
+
+1. x< $\mu$ : 
+$$DE(\mu, b) = F (X|\mu, \alpha) = \int_{-\inf}^x \frac{\alpha}{2} exp(-\alpha|x-\mu|)dx =  
+\int_{-\inf}^x \frac{\alpha}{2} exp(-\alpha x)* exp(\alpha \mu)dx = $$
+
+$$ = \frac{\alpha}{2} exp(\alpha \mu) * \left[ exp(-\alpha x) * (-\alpha) \right]_{- \inf}^x = \frac{\alpha}{2} * exp(\alpha \mu)* exp(-\alpha x) * \alpha = \frac{1}{2} exp(\alpha *|\mu - x|)  $$ 
+
+2. x > $\mu$:
+
+$$ DE(\mu, b) = F (X|\mu, \alpha) = \int_{-\inf}^\mu f(X|\mu, \alpha)dx + \int_{\mu}^x f(X|\mu, \alpha)dx  = $$
+
+$$ = \frac{1}{2} + \int_{\mu}^x \frac{\alpha}{2} e^{-\alpha|x-\mu|} = \frac{1}{2} + \left[ - \frac{1}{2} e^{-\alpha|x-\mu|} \right]_{\mu}^x = $$ 
+
+$$ = \frac{1}{2} + \left[ - \frac{1}{2} e^{-\alpha|x-\mu|} - (- \frac{1}{2}) * 1 \right] =  \frac{1}{2} -  \frac{1}{2} \left[ e^{-\alpha|x-\mu|} - 1\right] =  $$
+
+$$ = \frac{1}{2} -  \frac{1}{2} e^{-\alpha|x-\mu|} + \frac{1}{2} = 1 - \frac{1}{2} e^{-\alpha|x-\mu|}$$
+
 $$DE(\mu,b) = F(X|\mu,\alpha) = \frac{1}{2} + \frac{1}{2}*sgn(x-\mu) * (1-e^{-\frac{|x-\mu|}{b}})$$
 
 ```{r}
