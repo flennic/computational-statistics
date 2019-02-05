@@ -33,7 +33,8 @@ lottery = read_xls("lottery.xls")
 
 ```
 
-### 1. Make a scatterplot of Y versus X and conclude whether the lottery looks random. 
+### task 1
+Make a scatterplot of Y versus X and conclude whether the lottery looks random. 
 
 ```{r, echo = FALSE}
 
@@ -46,13 +47,35 @@ ggplot(lottery)+
 
 In the plot, it the lottery appears to be random, because of the relatively even distribution of the points over the area.
 
-### 2. Compute an estimate $\hat{Y} $ of the expected response as a function of $X$ by using a loess smoother (use loess()), put the curve $\hat{Y} $ versus $X$ in the previous graph and state again whether the lottery looks random.
+### Taks 2
+Compute an estimate $\hat{Y} $ of the expected response as a function of $X$ by using a loess smoother (use loess()), put the curve $\hat{Y} $ versus $X$ in the previous graph and state again whether the lottery looks random.
 
 
 ```{r}
-
-#
+ggplot(lottery)+
+  geom_point(aes(x = Day_of_year, y = Draft_No))+ 
+  geom_smooth(mapping = aes(x = Day_of_year, y = Draft_No),method = "loess", size = 1.5 )
 ```
+
+**Answer:**
+
+There are two reasons, why now the lottery doesn`t look like random anymore:
+
+1. the confidence interval of the curve is relatively small, especially compared to the spread of the data points.
+2. the data points follow the pattern of the curve slightly, especially above the line. 
+
+
+### Task 3. 
+
+To check whether the lottery is random, it is reasonable to use test statistics
+
+$$T = \frac{\hat{Y}(X_{b})-\hat{Y}(X_{a})}{X_{b}-X_{a}} $$
+$$\text{, where} X_{b} = argmax_{X}Y(X), X_{a} = argm_{inX}Y(X)  }  $$
+
+If this value is signi???cantly greater than zero, then there should be a trend in the data and the lottery is not random. Estimate the distribution of T by using a non-parametric bootstrap with B = 2000 and comment whether the lottery is random or not. What is the p-value of the test?
+
+
+
 
 ```{r, echo = FALSE}
 
