@@ -3,15 +3,15 @@ title: "Computational Statistics - Lab 04"
 author: "Annalena Erhard (anner218) and Maximilian Pfundstein (maxpf364)"
 date: "`r Sys.Date()`"
 output:
-  pdf_document:
-    number_sections: yes
-    toc: yes
-    toc_depth: 3
   html_document:
     df_print: paged
     number_sections: no
     toc: yes
     toc_float: no
+  pdf_document:
+    number_sections: yes
+    toc: yes
+    toc_depth: 3
   word_document:
     toc: yes
     toc_depth: '3'
@@ -50,7 +50,7 @@ f = function(x) {
 
 # Target function
 df = function(x) {
-  if (sum(c(x) <= 0) > 0) x = 0.0001
+  x = ifelse(x <= 0, 0.000001, x)
   return(x^5 * exp(-x))
 }
 
@@ -234,7 +234,37 @@ We assume as long as the proposal distribution mostly covers the target distribu
 
 **Answer:** The following output is based three sets of multiple sequences (with starting points $1...10$). The first set of sequences uses `5`, the second `10` and the last uses `50` iterations. We can see that the Upper C.I. (at `95%` confidence) converges towards `1` which indicates that the set has converged. This works by comparing the variance of the sequences within a set. As more iterations are performed, the MCMC depends less on the starting point until it finally holds no more information about that. This is when the Gelman-Ruby factor is near `1`.
 
-**TODO:** Implement also the formulas from the slides.
+**TODO:** Write Text. Look at Point est. not Upper CI.
+
+```{r}
+
+gelman_rubin_factor = function(sequence_matrix) {
+  
+  k = nrow(sequence_matrix)
+  n = ncol(sequence_matrix)
+  
+  B = n/(k-1) * sum((rowMeans(sequence_matrix) - mean(sequence_matrix))^2)
+  S_squared = colSums((sequence_matrix - rowMeans(sequence_matrix))^2 / (n - 1))
+  W = sum(S_squared / k)
+  V = ((n - 1) / n * W) + (1/n * B)
+  R = sqrt(V / W)
+  return(R)
+}
+
+k = 10 # row
+n = 1000 # col
+
+sequence_matrix = matrix(NaN, nrow = k, ncol = n)
+
+for (i in 1:k) {
+  sequence_matrix[i,] = metropolis_hastings(n, x_0 = i, b = 0,
+                                   proposal = "chisquared", keep_burnin = TRUE)
+}
+
+print(gelman_rubin_factor(sequence_matrix))
+
+```
+
 
 ```{r, echo = FALSE}
 
@@ -286,9 +316,10 @@ b = max(valid_samples_lnorm)
 a = min(valid_samples_lnorm)
 diff = b - a
 
-sum(f_integrate(valid_samples_lnorm) * diff / df(valid_samples_lnorm)) /
-  length(valid_samples_lnorm)
+#sum(f_integrate(valid_samples_lnorm) * diff / df(valid_samples_lnorm)) /
+#  length(valid_samples_lnorm)
 
+sum(valid_samples_lnorm) / length(valid_samples_lnorm)
 
 ```
 
@@ -300,8 +331,10 @@ b = max(valid_samples_chisquared)
 a = min(valid_samples_chisquared)
 diff = b - a
 
-sum(f_integrate(valid_samples_chisquared) * diff / df(valid_samples_chisquared)) /
-  length(valid_samples_chisquared)
+sum(valid_samples_chisquared) / length(valid_samples_chisquared)
+
+#sum(f_integrate(valid_samples_chisquared) * diff / df(valid_samples_chisquared)) /
+#  length(valid_samples_chisquared)
 
 ```
 
