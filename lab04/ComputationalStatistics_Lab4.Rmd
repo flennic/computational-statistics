@@ -3,15 +3,15 @@ title: "Computational Statistics - Lab 04"
 author: "Annalena Erhard (anner218) and Maximilian Pfundstein (maxpf364)"
 date: "`r Sys.Date()`"
 output:
+  pdf_document:
+    number_sections: yes
+    toc: yes
+    toc_depth: 3
   html_document:
     df_print: paged
     number_sections: no
     toc: yes
     toc_float: no
-  pdf_document:
-    number_sections: yes
-    toc: yes
-    toc_depth: 3
   word_document:
     toc: yes
     toc_depth: '3'
@@ -120,6 +120,8 @@ metropolis_hastings = function(n = 1, x_0 = 1, b = 50, proposal = "lnorm",
     
     # Calculate acceptance probability alpha
     if (df(xt_1) <= 0) {
+      # We need this to avoid troublesome areas where the density is so low that
+      # it's 0 from a computiationally point of view.
       alpha = 0
     }
     else {
@@ -226,15 +228,15 @@ ggplot(plotdf) +
 
 3. Compare the results of Steps 1 and 2 and make conclusions.
 
-**Answer:** The samples seem to actually be taken from the real distribution and in this context it doesn't matter which proposal distribution we take. Comparing the burn-in times we see that it seems to take longer for the chi-squared proposal to converge. We have to keep in mind that this mostly depends on the initial state of the MCMC. It's not so easy to take an initial value which is far of from the converging value as we get values around `0` as the functions have a really low density which makes it quite hard to actually calculate `c` and $\alpha$. As long as we take an initial state not too far off from a low density, we should be fine, as the algorithm automatically avoids really low density regions.
+**Answer:** The samples seem to actually be taken from the real distribution and in this context it doesn't matter which proposal distribution we take. Comparing the burn-in times we see that it seems to take longer for the chi-squared proposal to converge. We have to keep in mind that this mostly depends on the initial state of the MCMC. It's not so easy to take an initial value which is far of from the converging value as we get densities around `0` which makes it quite diffucult to actually calculate `c` and $\alpha$. As long as we take an initial state not too far off from a low density, we should be fine, as the algorithm automatically avoids really low density regions.
 
 We assume as long as the proposal distribution mostly covers the target distribution and the initial state is selected quite reasonable (which is not always the case in the "real world") the Metropolis-Hastings works quite well.
 
 4. Generate 10 MCMC sequences using the generator from Step 2 and starting points 1, 2, ..., or 10. Use the Gelman–Rubin method to analyze convergence of these sequences.
 
-**Answer:** The following output is based three sets of multiple sequences (with starting points $1...10$). The first set of sequences uses `5`, the second `10` and the last uses `50` iterations. We can see that the Upper C.I. (at `95%` confidence) converges towards `1` which indicates that the set has converged. This works by comparing the variance of the sequences within a set. As more iterations are performed, the MCMC depends less on the starting point until it finally holds no more information about that. This is when the Gelman-Ruby factor is near `1`.
+**Answer:** We can see that the Gelman-Rubin factor is close to `1` with a sequence length of `1000` which indicates that our sequences have converged. The usage of the implementation from the 'code' package can be found below.
 
-**TODO:** Write Text. Look at Point est. not Upper CI.
+This self written function is also called with a sequence length of just `5` to demonstrate that the Gelman-Ruben factor increases if the sequence has not converged.
 
 ```{r}
 
@@ -251,6 +253,10 @@ gelman_rubin_factor = function(sequence_matrix) {
   return(R)
 }
 
+```
+
+```{r, echo = FALSE}
+
 k = 10 # row
 n = 1000 # col
 
@@ -263,8 +269,23 @@ for (i in 1:k) {
 
 print(gelman_rubin_factor(sequence_matrix))
 
+k = 10 # row
+n = 5 # col
+
+sequence_matrix = matrix(NaN, nrow = k, ncol = n)
+
+for (i in 1:k) {
+  sequence_matrix[i,] = metropolis_hastings(n, x_0 = i, b = 0,
+                                   proposal = "chisquared", keep_burnin = TRUE)
+}
+
+print(gelman_rubin_factor(sequence_matrix))
+
 ```
 
+The following output is based three sets of multiple sequences (with starting points $1...10$) and used the package `coda`. The first set of sequences uses `5`, the second `10` and the last uses `50` iterations. We can see that the point estimate (at `95%` confidence) converges towards `1` with an increasing sequence length which indicates that the set has converged.
+
+The Gelman-Rubin factor works by comparing the variance of the sequences within a set. As more iterations are performed, the MCMC depends less on the starting point until it finally holds no more information about that and the sequences have the same variance compared to themselves and compares to the others. This is when the Gelman-Ruby factor is near `1`.
 
 ```{r, echo = FALSE}
 
@@ -301,8 +322,13 @@ gelman.diag(mcmc_list50)
 
 5. Estimate
 
-$$\int_{0}^{\infty} x f(x)dx $$
+$$\int_{0}^{\infty} x f(x)dx$$
 using the samples from Steps 1 and 2.
+
+**Answer:** To estimate this integral we take our previous samples. We then calculate:
+
+$$\int_{0}^{\infty} x f(x)dx = E[x_{}] \sim \frac{1}{n}\sum_{i=1}^{n} x_i$$
+where $x_i$ are our samples. As the decomposed left-side function is just $x$, this is all we have to do. The limits are given by the proposing function.
 
 ```{r}
 
@@ -312,13 +338,6 @@ f_integrate = function(x) {
 
 valid_samples_lnorm = results_lnorm[!is.na(results_lnorm)]
 
-b = max(valid_samples_lnorm)
-a = min(valid_samples_lnorm)
-diff = b - a
-
-#sum(f_integrate(valid_samples_lnorm) * diff / df(valid_samples_lnorm)) /
-#  length(valid_samples_lnorm)
-
 sum(valid_samples_lnorm) / length(valid_samples_lnorm)
 
 ```
@@ -327,24 +346,19 @@ sum(valid_samples_lnorm) / length(valid_samples_lnorm)
 
 valid_samples_chisquared = results_chisquared[!is.na(results_chisquared)]
 
-b = max(valid_samples_chisquared)
-a = min(valid_samples_chisquared)
-diff = b - a
-
 sum(valid_samples_chisquared) / length(valid_samples_chisquared)
 
-#sum(f_integrate(valid_samples_chisquared) * diff / df(valid_samples_chisquared)) /
-#  length(valid_samples_chisquared)
 
 ```
 
-**TODO:** The lnorm returns only half of the integral. Check out why (on purpose or if there is a reason).
-
 6. The distribution generated is in fact a gamma distribution. Look in the literature and define the actual value of the integral. Compare it with the one you obtained.
 
-**Answer:** As we know it's a gamma distribution where the integral over `D` is `1` and we also know the constant `C` given from above, we know that the integral has to add up to $1 * 120 = 120$.
+**Answer:** We can see that it is the following Gamma distribution and that the calculated integral is (almost) the same as the one we would expect.
 
-**TODO:** Check out and write down the real gamma distribution mentioned here.
+$$\Gamma(6,1) \Rightarrow E[\Gamma(6,1)] = 6 * 1 = 6$$
+Taking into account that $c = 120$ we can easily calculate the full integral which is:
+
+$$\int_{0}^{\infty} x f(x)dx = E[\Gamma(6,1)] * c = 6 * 120 = 720$$
 
 # Question 2: Gibbs Sampling
 
