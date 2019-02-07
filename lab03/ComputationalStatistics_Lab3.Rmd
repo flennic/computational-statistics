@@ -198,9 +198,19 @@ $$ln(2x) = \frac{y-\mu}{b}$$
 
 $$y = \mu + b * ln(2x)$$
 
+
+
 2. $x > \mu$:
 
-Darfst du machen :P
+$$ y = 1-\frac{1}{2} e^{-\frac{x-\mu}{b}}  $$
+
+$$x = 1-\frac{1}{2} e^{-\frac{y-\mu}{b}}$$
+$$(x-1)*(-2) =  e^{-\frac{y-\mu}{b}}$$
+$$ln(2-2x)*b = -y+\mu$$
+$$ln(2-2x)*b -\mu = -y$$
+$$y = -ln(2-2x)*b + \mu$$
+
+
 
 
 Combining those two we define our quantile function with $\mu = 0$, $\alpha = 1$ and thus $b = \frac{1}{1} = 1$:
