@@ -370,7 +370,7 @@ The instrument used to measure the concentration had certain accuracy; this is w
 # Loading RData
 load("chemical.RData")
 data = data.frame(X, Y)
-head(data)
+kable(head(data))
 
 ```
 
@@ -399,12 +399,19 @@ Present the formulae showing the likelihood $p(\vec{Y}|\vec{\mu})$ and the prior
 
 The formula for the likelihood is given by:
 
-$$\prod_{i=1}^{n}Y_i = \mathcal{N}(\mu_1|0.2) * \mathcal{N}(\mu_2|0.2) * \: ... \: * \mathcal{N}(\mu_n|0.2)$$
+$$p(\vec{Y}|\vec{\mu}) = \prod_{i=1}^{n}Y_i = \mathcal{N}(\mu_1|0.2) * \mathcal{N}(\mu_2|0.2) * \: ... \: * \mathcal{N}(\mu_n|0.2)$$
+
+Replacing with the normal distrubition it looks like this:
+
+$$p(\vec{Y}|\vec{\mu}) = \frac{1}{\sqrt{2\pi \sigma^2}} e^{-\frac{1}{2\sigma^2} \left( (\mu_2-\mu_1)^2 + (\mu_3-\mu_2)^2 + \: ... \: + (\mu_n-\mu_{n-1})^2  \right)}$$
+
+We will insert $\sigma$ at the very end when it's needed.
 
 The formula for the prior is given by:
 
 $$p(\vec{\mu}) = 1 * \mathcal{N}(\mu_1|0.2) * \mathcal{N}(\mu_2|0.2) * \: ... \: * \mathcal{N}(\mu_{n-1}|0.2)$$
 
+$$p(\vec{Y}|\vec{\mu}) = \frac{1}{\sqrt{2\pi \sigma^2}} e^{-\frac{1}{2\sigma^2} \left( (y_1-\mu_1)^2 + (y_2-\mu_2)^2 + \: ... \: + (y_{n-1}-\mu_{n-1})^2 + y_{n}-\mu_{n})^2  \right)}$$
 
 3. Use Bayes’ Theorem to get the posterior up to a constant proportionality, and then find out the distributions of $(\mu_i|\vec{\mu}_{-i},\vec{Y})$, where $\mu_{-i}$ is a vector containing all $\mu$ values except of $\mu_{i}$.
 
@@ -417,6 +424,14 @@ $$e^{-\frac{1}{d}\left( (x-a)^2 + (x-b)^2 \right)} \propto e^{-\frac{(x-(a+b)/2)
 Hint C:
 
 $$e^{-\frac{1}{d}\left( (x-a)^2 + (x-b)^2 + (x-c)^2 \right)} \propto e^{-\frac{(x-(a+b+c)/3)^2}{d/3}}$$
+
+Bayes Theorem states that:
+
+$$p(\vec{\mu}|\vec{y}) = p(\vec{\mu})p(\vec{y}|\vec{\mu})$$
+
+We will plug in the formulas from above. As we have to find the posterior up to a constant proportionality, we will let the constants disappear in the wide nothing of our cosmos.
+
+
 
 4. Use the distributions derived in Step 3 to implement a Gibbs sampler that uses $\vec{\mu}^{\,0} = 0,...,0$ as a starting point. Run the Gibbs sampler to obtain 1000 values of $\vec{\mu}$ and then compute the expected value of $\vec{\mu}$ versus X and Y versus X in the same graph. Does it seem that you have managed to remove the noise? Does it seem that the expected value of $\vec{\mu}$ can catch the true underlying dependence between Y and X?
 
