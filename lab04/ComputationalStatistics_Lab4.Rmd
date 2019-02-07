@@ -2,16 +2,18 @@
 title: "Computational Statistics - Lab 04"
 author: "Annalena Erhard (anner218) and Maximilian Pfundstein (maxpf364)"
 date: "`r Sys.Date()`"
+header-includes:
+   - \usepackage{xcolor}
 output:
+  pdf_document:
+    number_sections: yes
+    toc: yes
+    toc_depth: 3
   html_document:
     df_print: paged
     number_sections: no
     toc: yes
     toc_float: no
-  pdf_document:
-    number_sections: yes
-    toc: yes
-    toc_depth: 3
   word_document:
     toc: yes
     toc_depth: '3'
@@ -244,7 +246,8 @@ gelman_rubin_factor = function(sequence_matrix) {
   n = ncol(sequence_matrix)
   
   B = n/(k-1) * sum((rowMeans(sequence_matrix) - mean(sequence_matrix))^2)
-  S_squared = colSums((sequence_matrix - rowMeans(sequence_matrix))^2 / (n - 1))
+  # S_squared = colSums((sequence_matrix - rowMeans(sequence_matrix))^2 / (n - 1))
+  S_squared = rowSums((sequence_matrix - rowMeans(sequence_matrix))^2 / (n - 1))
   W = sum(S_squared / k)
   V = ((n - 1) / n * W) + (1/n * B)
   R = sqrt(V / W)
@@ -405,7 +408,7 @@ Replacing with the normal distrubition it looks like this:
 
 $$p(\vec{Y}|\vec{\mu}) = \frac{1}{\sqrt{2\pi \sigma^2}} e^{-\frac{1}{2\sigma^2} \left( (\mu_2-\mu_1)^2 + (\mu_3-\mu_2)^2 + \: ... \: + (\mu_n-\mu_{n-1})^2  \right)}$$
 
-We will insert $\sigma$ at the very end when it's needed.
+We will insert $\sigma$ at the very end when it's needed for both the likelihood and the prior.
 
 The formula for the prior is given by:
 
@@ -431,7 +434,13 @@ $$p(\vec{\mu}|\vec{y}) = p(\vec{\mu})p(\vec{y}|\vec{\mu})$$
 
 We will plug in the formulas from above. As we have to find the posterior up to a constant proportionality, we will let the constants disappear in the wide nothing of our cosmos.
 
+$$p(\vec{\mu}|\vec{y}) \propto  e^{-\frac{1}{2\sigma^2} \left( (\mu_2-{\color{red}\mu_1})^2 + (\mu_3{\color{blue}-\mu_2})^2 + \: ... \: + (\mu_n{\color{orange}-\mu_{n-1}})^2  \right)}  e^{-\frac{1}{2\sigma^2} \left( (y_1{\color{red}-\mu_1})^2 + (y_2-{\color{blue}\mu_2})^2 + \: ... \: + (y_{n-1}{\color{orange}-\mu_{n-1}})^2 + y_{n}{\color{magenta}-\mu_{n}})^2  \right)}$$
 
+We see that every term in the exponent from both $e$s contains the same $\mu$, as indicated by the colors. Using hint B we can summarize it as follows:
+
+$$p(\vec{\mu}|\vec{y}) \propto e^{-\frac{\left({\color{red}-\mu_1}-\frac{\mu_2+y_1}{2}\right)^2}{\sigma^2} -\frac{\left({\color{blue}-\mu_2}-\frac{\mu_3+y_2}{2}\right)^2}{\sigma^2} - \: ... \: -\frac{\left({\color{orange}-\mu_{n-1}}-\frac{\mu_n+y_{n-1}}{2}\right)^2}{\sigma^2} -\frac{\left( y_n - {\color{magenta}\mu_n}\right)^2}{\sigma^2}}$$
+
+We can see that the last term is different, as it does not have a corresponding partner.
 
 4. Use the distributions derived in Step 3 to implement a Gibbs sampler that uses $\vec{\mu}^{\,0} = 0,...,0$ as a starting point. Run the Gibbs sampler to obtain 1000 values of $\vec{\mu}$ and then compute the expected value of $\vec{\mu}$ versus X and Y versus X in the same graph. Does it seem that you have managed to remove the noise? Does it seem that the expected value of $\vec{\mu}$ can catch the true underlying dependence between Y and X?
 
