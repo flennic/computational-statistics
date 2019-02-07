@@ -3,15 +3,15 @@ title: "Computational Statistics - Lab 03"
 author: "Annalena Erhard (anner218) and Maximilian Pfundstein (maxpf364)"
 date: "`r Sys.Date()`"
 output:
+  pdf_document:
+    toc: true
+    toc_depth: 3
+    number_sections: true
   html_document:
     df_print: paged
     toc: true
     toc_float: false
     number_sections: false
-  pdf_document:
-    toc: true
-    toc_depth: 3
-    number_sections: true
 ---
 
 ```{r libraries, echo=FALSE, message=FALSE}
@@ -136,17 +136,32 @@ $$DE(\mu,\alpha) = \frac{\alpha}{2}e^{-\alpha|x-\mu|}$$
 
 **Task**: Write a code generating double exponential distribution $DE(0, 1)$ from $Unif(0, 1)$ by using the inverse CDF method. Explain how you obtained that code step by step. Generate `10000` random numbers from this distribution, plot the histogram and comment whether the result looks reasonable.
 
-**Answer:** What we are going to do is we sample from `unif(0,1)` and take the results and put it into the quantile function of $DE(0, 1)$. As we take the definition from [Laplace Distribution (Wikipedia)](https://en.wikipedia.org/wiki/Laplace_distribution) for the quantile function we have to keep in mind that $\alpha = \frac{1}{b}$. Let's first define our quantile function with $\mu = 0$, $\alpha = 1$ and thus $b = \frac{1}{1} = 1$ as well:
+**Answer:** What we are going to do is we sample from `unif(0,1)` and take the results and put it into the quantile function of $DE(0, 1)$. As we take the definition from [Laplace Distribution (Wikipedia)](https://en.wikipedia.org/wiki/Laplace_distribution) for the quantile function we have to keep in mind that $\alpha = \frac{1}{b}$. For the sake of completeness we also derive the formulas here, so first we will take the given PDF, derive the CDF and then take the inverse to get the quantile function.
 
-$$Q(p) = F^{-1}(p) = \mu - b*sgn(p-0.5) * ln(1-2|p-0.5|)$$
+**CDF:**
 
-With the above defined variables we obtain:
+The CDF can be derived from the PDF by dividing it into two cases:
 
-$$Q(p|\mu,b) \Rightarrow Q(p|0,1) = -sgn(p-0.5) * ln(1-2|p-0.5|)$$
+1. $x < \mu$: 
 
-Where `sgn` is the [Sign Function (Wikipedia)](https://en.wikipedia.org/wiki/Sign_function).
+$$DE(\mu, b) = F (X|\mu, \alpha) = \int_{-\inf}^x \frac{\alpha}{2} exp(-\alpha|x-\mu|)dx =  
+\int_{-\inf}^x \frac{\alpha}{2} exp(-\alpha x)* exp(\alpha \mu)dx = $$
 
-Let's implement those two functions as a start:
+$$ = \frac{\alpha}{2} exp(\alpha \mu) * \left[ exp(-\alpha x) * (-\alpha) \right]_{- \inf}^x = \frac{\alpha}{2} * exp(\alpha \mu)* exp(-\alpha x) * \alpha = \frac{1}{2} exp(\alpha *|\mu - x|)  $$ 
+
+2. $x > \mu$:
+
+$$ DE(\mu, b) = F (X|\mu, \alpha) = \int_{-\inf}^\mu f(X|\mu, \alpha)dx + \int_{\mu}^x f(X|\mu, \alpha)dx  = $$
+
+$$ = \frac{1}{2} + \int_{\mu}^x \frac{\alpha}{2} e^{-\alpha|x-\mu|} = \frac{1}{2} + \left[ - \frac{1}{2} e^{-\alpha|x-\mu|} \right]_{\mu}^x = $$ 
+
+$$ = \frac{1}{2} + \left[ - \frac{1}{2} e^{-\alpha|x-\mu|} - (- \frac{1}{2}) * 1 \right] =  \frac{1}{2} -  \frac{1}{2} \left[ e^{-\alpha|x-\mu|} - 1\right] =  $$
+
+$$ = \frac{1}{2} -  \frac{1}{2} e^{-\alpha|x-\mu|} + \frac{1}{2} = 1 - \frac{1}{2} e^{-\alpha|x-\mu|}$$
+
+Putting this together using the `sgn()` function we get the following:
+
+$$DE(\mu,b) = F(X|\mu,\alpha) = \frac{1}{2} + \frac{1}{2}*sgn(x-\mu) * (1-e^{-\frac{|x-\mu|}{b}})$$
 
 ```{r, echo = FALSE}
 
@@ -156,13 +171,49 @@ Let's implement those two functions as a start:
 
 ```
 
-
 ```{r}
 
 sgn = function(x) {
   if (x < 0) return(-1)
   return(1)
 }
+
+pdel = function(x = 1, mu = 0, b = 1) {
+  return(1/2 + 1/2 * sgn(x-mu) * (1 - exp(-abs(x-mu)/b)))
+}
+
+```
+
+Now we swap $y$ and $x$ the get the quantile function.
+
+1. $x < \mu$:
+
+$$y = 0.5 * e{\frac{x-\mu}{b}}$$
+
+$$x = 0.5 * e{\frac{y-\mu}{b}}$$
+
+$$2x = e{\frac{y-\mu}{b}}$$
+
+$$ln(2x) = \frac{y-\mu}{b}$$
+
+$$y = \mu + b * ln(2x)$$
+
+2. $x > \mu$:
+
+Darfst du machen :P
+
+
+Combining those two we define our quantile function with $\mu = 0$, $\alpha = 1$ and thus $b = \frac{1}{1} = 1$:
+
+$$Q(p) = F^{-1}(p) = \mu - b*sgn(p-0.5) * ln(1-2|p-0.5|)$$
+
+With the above defined variables we obtain:
+
+$$Q(p|\mu,b) \Rightarrow Q(p|0,1) = -sgn(p-0.5) * ln(1-2|p-0.5|)$$
+
+Let's implement the quantile function:
+
+```{r}
 
 qdel = function(p, mu = 0, b = 1) {
   if (p < 0 | p > 1) stop("p must be in range (0, 1)")
@@ -237,7 +288,7 @@ The results look reasonable when compared to the original density function as th
 
 **Task**: Use the Acceptance/rejection method with $DE(0, 1)$ as a majorizing density to generate $\mathcal{N}(0,1)$ variables. Explain step by step how this was done. How did you choose constant `c` in this method? Generate `2000` random numbers $\mathcal{N}(0,1)$ using your code and plot the histogram. Compute the average rejection rate `R` in the acceptance/rejection procedure. What is the expected rejection rate `ER` and how close is it to `R`? Generate `2000` numbers from $\mathcal{N}(0,1)$ using standard `rnorm()` procedure, plot the histogram and compare the obtained two histograms.
 
-**Answer:** As we have not yet created a function for the PDF and CDF $DE(\mu,\alpha)$ we will do this now and compare it to the normal distribution. We well swap $\alpha$ with $b$ to ensure consitency.
+**Answer:** As we have not yet created a function for the PDF $DE(\mu,\alpha)$ we will do this now. We will swap $\alpha$ with $b$ to ensure consitency.
 
 **PDF:**
 
@@ -250,37 +301,6 @@ ddel = function(x = 1, mu = 0, b = 1) {
 }
 
 ```
-
-**CDF:**
-
-The CDF can be derived from the PDF by dividing it into two cases:
-
-1. x< $\mu$ : 
-$$DE(\mu, b) = F (X|\mu, \alpha) = \int_{-\inf}^x \frac{\alpha}{2} exp(-\alpha|x-\mu|)dx =  
-\int_{-\inf}^x \frac{\alpha}{2} exp(-\alpha x)* exp(\alpha \mu)dx = $$
-
-$$ = \frac{\alpha}{2} exp(\alpha \mu) * \left[ exp(-\alpha x) * (-\alpha) \right]_{- \inf}^x = \frac{\alpha}{2} * exp(\alpha \mu)* exp(-\alpha x) * \alpha = \frac{1}{2} exp(\alpha *|\mu - x|)  $$ 
-
-2. x > $\mu$:
-
-$$ DE(\mu, b) = F (X|\mu, \alpha) = \int_{-\inf}^\mu f(X|\mu, \alpha)dx + \int_{\mu}^x f(X|\mu, \alpha)dx  = $$
-
-$$ = \frac{1}{2} + \int_{\mu}^x \frac{\alpha}{2} e^{-\alpha|x-\mu|} = \frac{1}{2} + \left[ - \frac{1}{2} e^{-\alpha|x-\mu|} \right]_{\mu}^x = $$ 
-
-$$ = \frac{1}{2} + \left[ - \frac{1}{2} e^{-\alpha|x-\mu|} - (- \frac{1}{2}) * 1 \right] =  \frac{1}{2} -  \frac{1}{2} \left[ e^{-\alpha|x-\mu|} - 1\right] =  $$
-
-$$ = \frac{1}{2} -  \frac{1}{2} e^{-\alpha|x-\mu|} + \frac{1}{2} = 1 - \frac{1}{2} e^{-\alpha|x-\mu|}$$
-
-$$DE(\mu,b) = F(X|\mu,\alpha) = \frac{1}{2} + \frac{1}{2}*sgn(x-\mu) * (1-e^{-\frac{|x-\mu|}{b}})$$
-
-```{r}
-
-pdel = function(x = 1, mu = 0, b = 1) {
-  return(1/2 + 1/2 * sgn(x-mu) * (1 - exp(-abs(x-mu)/b)))
-}
-
-```
-
 
 Let's plot `ddel()` with  `dnorm()` and `pdel()` with  `dnorm()`:
 
