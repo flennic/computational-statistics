@@ -3,15 +3,15 @@ title: "Computational Statistics - Lab 04"
 author: "Annalena Erhard (anner218) and Maximilian Pfundstein (maxpf364)"
 date: "`r Sys.Date()`"
 output:
-  pdf_document:
-    number_sections: yes
-    toc: yes
-    toc_depth: 3
   html_document:
     df_print: paged
     number_sections: no
     toc: yes
     toc_float: no
+  pdf_document:
+    number_sections: yes
+    toc: yes
+    toc_depth: 3
   word_document:
     toc: yes
     toc_depth: '3'
@@ -397,7 +397,7 @@ Present the formulae showing the likelihood $p(\vec{Y}|\vec{\mu})$ and the prior
 
 **Answer:** Using the chain rule, we get the formulas for the likelihood and the prior.
 
-The formula for the likelihood looks is given by:
+The formula for the likelihood is given by:
 
 $$\prod_{i=1}^{n}Y_i = \mathcal{N}(\mu_1|0.2) * \mathcal{N}(\mu_2|0.2) * \: ... \: * \mathcal{N}(\mu_n|0.2)$$
 

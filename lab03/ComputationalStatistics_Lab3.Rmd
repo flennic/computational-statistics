@@ -346,10 +346,10 @@ ggplot(df) +
 
 ggplot(df) +
   geom_ribbon(aes(x = sequence, ymin = df$dnorm_samples, ymax = df$scaled_envelop),
-              alpha = 0.8, fill = "#DAF7A6", color = "#DAF7A6") +
-  geom_ribbon(aes(x = sequence, ymin = 0, ymax = df$dnorm_samples),
               alpha = 0.8, fill = "#C70039", color = "#C70039") +
-  labs(title = "Acceptence and Rejection Regions", y = "Density",
+  geom_ribbon(aes(x = sequence, ymin = 0, ymax = df$dnorm_samples),
+              alpha = 0.8, fill = "#DAF7A6", color = "#DAF7A6") +
+  labs(title = "Acceptance and Rejection Regions", y = "Density",
   x = "X", color = "Legend") +
   scale_color_manual(values = c("#17202A", "#C70039", "#581845")) +
   theme_minimal()
@@ -372,7 +372,7 @@ while (length(rs) < 2000) {
   u = runif(n = 1, min = 0, max = c * ddel(z))
   
   # Check in which region this on lies
-  if (u <= pnorm(z)) {
+  if (u <= dnorm(z)) {
     rs = c(rs, z)
   }
   else {
