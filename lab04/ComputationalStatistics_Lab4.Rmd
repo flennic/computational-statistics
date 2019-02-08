@@ -5,15 +5,15 @@ date: "`r Sys.Date()`"
 header-includes:
    - \usepackage{xcolor}
 output:
+  pdf_document:
+    number_sections: yes
+    toc: yes
+    toc_depth: 3
   html_document:
     df_print: paged
     number_sections: no
     toc: yes
     toc_float: no
-  pdf_document:
-    number_sections: yes
-    toc: yes
-    toc_depth: 3
   word_document:
     toc: yes
     toc_depth: '3'
@@ -443,6 +443,61 @@ $$p(\vec{\mu}|\vec{y}) \propto e^{-\frac{\left({\color{red}-\mu_1}-\frac{\mu_2+y
 We can see that the last term is different, as it does not have a corresponding partner.
 
 4. Use the distributions derived in Step 3 to implement a Gibbs sampler that uses $\vec{\mu}^{\,0} = 0,...,0$ as a starting point. Run the Gibbs sampler to obtain 1000 values of $\vec{\mu}$ and then compute the expected value of $\vec{\mu}$ versus X and Y versus X in the same graph. Does it seem that you have managed to remove the noise? Does it seem that the expected value of $\vec{\mu}$ can catch the true underlying dependence between Y and X?
+
+```{r, eval = FALSE}
+
+get_mu = function(i, sigma = 0.2, mu, Y) {
+  
+  if (i == 1) {
+    # First Marginal
+    return(rnorm(n = 1, mean = (mu[2] + Y[1])/2, sd = sqrt(1/2 * sigma)))
+  }
+  else if (i == 50) {
+    # Last Marginal
+    return(rnorm(n = 1, mean = (2 * mu[i-1] - Y[i-1] + 2 * Y[i])/3,
+                 sd = sqrt(2/3 * sigma)))
+  }
+  
+  # General Marginals
+    return(rnorm(n = 1, mean = (2 * mu[i-1] + 2 * mu[i+1] + 2 * Y[i] - Y[i-1])/5,
+                 sd = sqrt(2/5 * sigma)))
+}
+
+gibbs_sample = function(n, Y) {
+  
+  # Vectors to store the samples in
+  mu_matrix = matrix(0, ncol = length(Y), nrow = n)
+  mu = rep(0, length(Y))
+  
+  # Samples from proposel from the random walk (MC)
+  #xt = x_0
+  #xt_1 = x_0
+  
+  for(j in 1:n) {
+    for (i in 1:length(Y)) {
+      mu[i] = get_mu(i, sigma = 0.2, mu = mu, Y = Y)
+    }
+    mu_matrix[j,] = mu
+  }
+  
+  return(colMeans(mu_matrix))
+}
+
+```
+
+```{r}
+
+data$gibbs_samples = gibbs_sample(1000, Y)
+
+ggplot(data) +
+  geom_line(aes(x = X, y = Y), color = "#c70039") +
+  geom_line(aes(x = X, y = gibbs_samples), color = "#FFC300") +
+  labs(title = "Dependence from Concentration on Day of Measurement", y = "Concentration",  x = "Day of Measurement", color = "Legend") +
+  theme_minimal()
+
+```
+
+
 
 5. Make a trace plot for $\mu_n$ and comment on the burn–in period and convergence.
 
