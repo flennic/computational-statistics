@@ -5,15 +5,15 @@ date: "`r Sys.Date()`"
 header-includes:
    - \usepackage{xcolor}
 output:
-  pdf_document:
-    number_sections: yes
-    toc: yes
-    toc_depth: 3
   html_document:
     df_print: paged
     number_sections: no
     toc: yes
     toc_float: no
+  pdf_document:
+    number_sections: yes
+    toc: yes
+    toc_depth: 3
   word_document:
     toc: yes
     toc_depth: '3'
@@ -404,11 +404,11 @@ The formula for the likelihood is given by:
 
 $$p(\vec{Y}|\vec{\mu}) = \prod_{i=1}^{n}Y_i = \mathcal{N}(\mu_1|0.2) * \mathcal{N}(\mu_2|0.2) * \: ... \: * \mathcal{N}(\mu_n|0.2)$$
 
-Replacing with the normal distrubition it looks like this:
+Replacing with the normal distribution it looks like this:
 
 $$p(\vec{Y}|\vec{\mu}) = \frac{1}{\sqrt{2\pi \sigma^2}} e^{-\frac{1}{2\sigma^2} \left( (\mu_2-\mu_1)^2 + (\mu_3-\mu_2)^2 + \: ... \: + (\mu_n-\mu_{n-1})^2  \right)}$$
 
-We will insert $\sigma$ at the very end when it's needed for both the likelihood and the prior.
+We will insert $\sigma$ at the very end in the coding chunks when we have the marginals for the Gibbs Sampler.
 
 The formula for the prior is given by:
 
@@ -432,7 +432,7 @@ Bayes Theorem states that:
 
 $$p(\vec{\mu}|\vec{y}) = p(\vec{\mu})p(\vec{y}|\vec{\mu})$$
 
-We will plug in the formulas from above. As we have to find the posterior up to a constant proportionality, we will let the constants disappear in the wide nothing of our cosmos.
+We will plug in the formulas from above. As we have to find the posterior up to a constant proportionality, we will let the constants disappear in our terms.
 
 $$p(\vec{\mu}|\vec{y}) \propto  e^{-\frac{1}{2\sigma^2} \left( (\mu_2-{\color{red}\mu_1})^2 + (\mu_3{\color{blue}-\mu_2})^2 + \: ... \: + (\mu_n{\color{orange}-\mu_{n-1}})^2  \right)}  e^{-\frac{1}{2\sigma^2} \left( (y_1{\color{red}-\mu_1})^2 + (y_2-{\color{blue}\mu_2})^2 + \: ... \: + (y_{n-1}{\color{orange}-\mu_{n-1}})^2 + y_{n}{\color{magenta}-\mu_{n}})^2  \right)}$$
 
@@ -442,9 +442,60 @@ $$p(\vec{\mu}|\vec{y}) \propto e^{-\frac{\left({\color{red}-\mu_1}-\frac{\mu_2+y
 
 We can see that the last term is different, as it does not have a corresponding partner.
 
+Now we use this posterior to derive the marginals. For getting the marginals we will need to find the terms that are dependant on $\mu_i$.
+
+$$p(\mu_1|\vec{y}) \propto e^{- \frac{\left(-\mu_1 + \frac{\mu_2 + y_1}{2}\right)^2}{\sigma^2}}$$
+
+$$p(\mu_2|\vec{y}) \propto e^{- \frac{\left(-\mu_1 + \frac{\mu_2 + y_1}{2}\right)^2}{\sigma^2} - \frac{\left(-\mu_2 + \frac{\mu_3 + y_2}{2}\right)^2}{\sigma^2}}$$
+
+$$ ... $$
+
+$$p(\mu_{n-1}|\vec{y}) \propto e^{- \frac{\left(-\mu_{n-2} + \frac{\mu_{n-1} + y_{n-2}}{2}\right)^2}{\sigma^2} - \frac{\left(-\mu_{n-1} + \frac{\mu_n + y_{n-1}}{2}\right)^2}{\sigma^2}}$$
+
+As the last term does not have a *partner* (see colors) we cannot combine the terms.
+
+$$p(\mu_{n}|\vec{y}) \propto e^{- \frac{\left(-\mu_{n-1} + \frac{\mu_{n} + y_{n-1}}{2}\right)^2}{\sigma^2} - \frac{\left(y_n - \mu_n\right)^2}{\sigma^2}}$$
+
+Observing the equations for the marginals we have to distinguish three cases, the first marginal, the last marginal and all other marginals. First we will write each term in the power of `e` as a normal distribution, for that we have du adjust some of the terms. After that we have (except for the first marginal) the product of two normal distributions which is a normal distribution again. Let's start with the first marginal, as it's the easiest one.
+
+As we already have the dependant ($\mu_1$) neatly on the left side, we can directly spot the difference to the normal distribution.
+
+$$p(\mu_1|\vec{y}) \propto \mathcal{N}\left(\frac{1}{2}(\mu_2 + y_1), \frac{1}{2} \sigma^2 \right)$$
+
+For the next distributions this process will be a bit more cumbersome. We first have to rewrite the fractions in the `e` exponent to have the dependant ($\mu_i$) on the left side to spot the normal distribution. As a small recap, this is the formula for the marginals except the first and last one:
+
+$$p(\mu_{i}|\vec{y}) \propto e^{- \frac{\left(-\mu_{i-1} + \frac{\mu_{i} + y_{i-1}}{2}\right)^2}{\sigma^2} - \frac{\left(-\mu_{i} + \frac{\mu_{i+1} + y_{i}}{2}\right)^2}{\sigma^2}}$$
+
+Adjusting the first fraction in the `e` term yields in:
+
+$$p(\mu_{i}|\vec{y}) \propto e^{- \frac{\left(\mu_{i} -( 2\mu_{i-1} - y_{i-1})\right)^2}{4\sigma^2} - \frac{\left(-\mu_{i} + \frac{\mu_{i+1} + y_{i}}{2}\right)^2}{\sigma^2}}$$
+
+Now we can rewrite this as a product of two normal distributions:
+
+$$p(\mu_{i}|\vec{y}) \propto  \mathcal{N}\left(\  2\mu_{i-1 - y_{i-1}, 2\sigma^2}\right) * \mathcal{N}\left(\ \frac{1}{2}\mu_i+y_i, \frac{1}{2}\sigma^2 \right)$$
+
+The product of two normal distributions is given by (see https://www.johndcook.com/blog/2012/10/29/product-of-normal-pdfs/ as a recap if not present):
+
+$$\sigma_{new}^{2} = \frac{\sigma_{1}^{2}\sigma_{2}^{2}}{\sigma_{1}^{2} + \sigma_{2}^{2}}$$
+$$\mu_{new} = \frac{\sigma_{1}^{-2}\mu_1 + \sigma_{2}^{-2}\mu_2}{\sigma_{1}^{-2} + \sigma_{2}^{-2}}$$
+
+Applying this rule we receive the following normal distribution in the end:
+
+$$\mathcal{N}\left(\ \frac{1}{5}(2\mu_{i-1} + 2\mu_{i+1} + 2y_{i} - y_{i-1}), \frac{2}{5} \sigma^2 \right)$$
+
+For the last marginal we can reuse the `e` term from the previous marginals for the first distribution as only the right part (the second normal distribution) changes.
+
+$$p(\mu_{n}|\vec{y}) \propto  \mathcal{N}\left(\  2\mu_{i-1 - y_{i-1}, 2\sigma^2}\right) * \mathcal{N}\left(\ y_i, \sigma^2 \right)$$
+
+Now we have to combine those again, by applying the above mentioned rule, thus we receive the following for the last distribution:
+
+$$(\mu_{n}|\vec{y}) \propto  \mathcal{N}\left(\ \frac{1}{3}(2\mu_{i-1} - y_{i-1} + 2y_i), \frac{2}{3} \sigma^2 \right)$$
+
+So finally we have all the desired marginals. It's time for Gibbs Sampling!
+
 4. Use the distributions derived in Step 3 to implement a Gibbs sampler that uses $\vec{\mu}^{\,0} = 0,...,0$ as a starting point. Run the Gibbs sampler to obtain 1000 values of $\vec{\mu}$ and then compute the expected value of $\vec{\mu}$ versus X and Y versus X in the same graph. Does it seem that you have managed to remove the noise? Does it seem that the expected value of $\vec{\mu}$ can catch the true underlying dependence between Y and X?
 
-```{r, eval = FALSE}
+```{r}
 
 get_mu = function(i, sigma = 0.2, mu, Y) {
   
@@ -469,10 +520,6 @@ gibbs_sample = function(n, Y) {
   mu_matrix = matrix(0, ncol = length(Y), nrow = n)
   mu = rep(0, length(Y))
   
-  # Samples from proposel from the random walk (MC)
-  #xt = x_0
-  #xt_1 = x_0
-  
   for(j in 1:n) {
     for (i in 1:length(Y)) {
       mu[i] = get_mu(i, sigma = 0.2, mu = mu, Y = Y)
@@ -485,21 +532,26 @@ gibbs_sample = function(n, Y) {
 
 ```
 
-```{r}
+```{r, echo = FALSE}
 
 data$gibbs_samples = gibbs_sample(1000, Y)
 
 ggplot(data) +
-  geom_line(aes(x = X, y = Y), color = "#c70039") +
-  geom_line(aes(x = X, y = gibbs_samples), color = "#FFC300") +
+  geom_line(aes(x = X, y = Y), color = "#C70039") +
+  geom_line(aes(x = X, y = gibbs_samples), color = "#581845") +
   labs(title = "Dependence from Concentration on Day of Measurement", y = "Concentration",  x = "Day of Measurement", color = "Legend") +
   theme_minimal()
 
 ```
 
-
+Looking at the graph it indeed seems like we were able to reduce the noise. It's hard to say if the expected value of $\vec{\mu}$ is able to catch the true underlaying dependence between Y and X, but it looks like, as we have lees noise, which is some (distributed) error, that it does.
 
 5. Make a trace plot for $\mu_n$ and comment on the burn–in period and convergence.
+
+```{r, echo = FALSE}
+
+```
+
 
 
 # Source Code
