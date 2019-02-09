@@ -5,15 +5,15 @@ date: "`r Sys.Date()`"
 header-includes:
    - \usepackage{xcolor}
 output:
+  pdf_document:
+    number_sections: yes
+    toc: yes
+    toc_depth: 3
   html_document:
     df_print: paged
     number_sections: no
     toc: yes
     toc_float: no
-  pdf_document:
-    number_sections: yes
-    toc: yes
-    toc_depth: 3
   word_document:
     toc: yes
     toc_depth: '3'
@@ -514,7 +514,7 @@ get_mu = function(i, sigma = 0.2, mu, Y) {
                  sd = sqrt(2/5 * sigma)))
 }
 
-gibbs_sample = function(n, Y) {
+gibbs_sample = function(n, Y, include_matrix = FALSE) {
   
   # Vectors to store the samples in
   mu_matrix = matrix(0, ncol = length(Y), nrow = n)
@@ -527,6 +527,10 @@ gibbs_sample = function(n, Y) {
     mu_matrix[j,] = mu
   }
   
+  if (include_matrix) {
+    return(list(means = colMeans(mu_matrix), matrix = mu_matrix))
+  }
+  
   return(colMeans(mu_matrix))
 }
 
@@ -534,7 +538,9 @@ gibbs_sample = function(n, Y) {
 
 ```{r, echo = FALSE}
 
-data$gibbs_samples = gibbs_sample(1000, Y)
+gibbs_sample_result = gibbs_sample(1000, Y, TRUE)
+
+data$gibbs_samples = gibbs_sample_result$means
 
 ggplot(data) +
   geom_line(aes(x = X, y = Y), color = "#C70039") +
@@ -550,9 +556,19 @@ Looking at the graph it indeed seems like we were able to reduce the noise. It's
 
 ```{r, echo = FALSE}
 
+df = data.frame(
+  iteration = seq(from = 1, to = length(gibbs_sample_result$matrix[,50]), by = 1),
+  mu_n = gibbs_sample_result$matrix[,50])
+
+ggplot(df) +
+  geom_line(aes(x = iteration, y = mu_n), color = "#C70039") +
+  labs(title = "Trace of mu_n", y = "Value of mu_n",  x = "Iteration",
+       color = "Legend") +
+  theme_minimal()
+
 ```
 
-
+We see that the burn-in period is rather short (roughly `50` to `100` iterations) and that $\mu_n$ has converged after the burn-in. The trace jumps around the mean which is close to `1.5`.
 
 # Source Code
 
