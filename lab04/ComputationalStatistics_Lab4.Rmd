@@ -550,7 +550,7 @@ ggplot(data) +
 
 ```
 
-Looking at the graph it indeed seems like we were able to reduce the noise. It's hard to say if the expected value of $\vec{\mu}$ is able to catch the true underlaying dependence between Y and X, but it looks like, as we have lees noise, which is some (distributed) error, that it does.
+Looking at the graph it indeed seems like we were able to reduce the noise. It's hard to say if the expected value of $\vec{\mu}$ is able to catch the true underlaying dependence between Y and X. But it looks like, as we have less noise, which behaves like some unknown (distributed) error, that it does.
 
 5. Make a trace plot for $\mu_n$ and comment on the burn–in period and convergence.
 
@@ -568,7 +568,7 @@ ggplot(df) +
 
 ```
 
-We see that the burn-in period is rather short (roughly `50` to `100` iterations) and that $\mu_n$ has converged after the burn-in. The trace jumps around the mean which is close to `1.5`.
+We see that the burn-in period is rather short (roughly `50` to `100` iterations) and that $\mu_n$ has converged after the burn-in. The trace jumps around the mean which  close to `1.5`.
 
 # Source Code
 
