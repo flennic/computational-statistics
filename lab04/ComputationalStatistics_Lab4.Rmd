@@ -5,15 +5,15 @@ date: "`r Sys.Date()`"
 header-includes:
    - \usepackage{xcolor}
 output:
-  pdf_document:
-    number_sections: yes
-    toc: yes
-    toc_depth: 3
   html_document:
     df_print: paged
     number_sections: no
     toc: yes
     toc_float: no
+  pdf_document:
+    number_sections: yes
+    toc: yes
+    toc_depth: 3
   word_document:
     toc: yes
     toc_depth: '3'
@@ -576,6 +576,46 @@ ggplot(df) +
 ```
 
 We see that the burn-in period is rather short (roughly `50` to `100` iterations) and that $\mu_n$ has converged after the burn-in. The trace jumps around the mean which  close to `1.5`.
+
+\newpage
+
+```{r, eval = FALSE}
+
+                         PROBLEM SOLVING
+                          P R O C E S S
+
+
+            YES   =============================   NO
+     +-----------|| Does the Darn Thing work? ||-----------+
+     |            =============================            |
+     V                                                     V
++----------+     +---------+                          +---------+
+|   Don't  |  NO |   Does  |       +-------+     YES  | Did you |
+|   mess   | +---|  anyone |<------|  YOU  |<---------|   mess  |
+| with it! | |   |  know?  |       | MORON |          | with it |
++----------+ |   +---------+       +-------+          +---------+
+     |       V        | YES                                |  NO
+     |    +------+    +-----------+                        |
+     |    | HIDE |                V                        V
+     |    |  IT  |            +--------+             +-----------+
+     |    +------+            |  YOU   |        YES  | WILL THEY |
+     |       |       +------->|  POOR  |<------------| CATCH YOU?|
+     |       |       |        |BASTARD!|             +-----------+
+     |       |       |        |________|                   |  NO
+     |       |       |             |                       |
+     |       |       |             V                       V
+     |       |       |      +---------------+        +-----------+
+     |       |       |  NO  | CAN YOU BLAME |        |DESTROY THE|
+     |       |       +------| SOMEONE ELSE? |        |  EVIDENCE |
+     |       |              +---------------+        +-----------+
+     |       |                     |  YES                  |
+     |       |                     v                       |
+     |       |      ============================           |
+     |       +---->||           N O            ||<---------+
+     +------------>||      P R O B L E M       ||
+                    ============================
+
+```
 
 # Source Code
 
