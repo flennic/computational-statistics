@@ -64,7 +64,7 @@ if (x1-x2 == 1/2) {
 
 2. You can either just use more bits for representing the numbers until you have the desired precision or use/write a class which can handle a specific amount of numbers behind the decimal point (which will be slower for sure).
 
-Another way to to handle ths issue can be seen in the following code snippet. The used method `all.equal()` will try to handle computational errors allowing an error tolerance of `1.5e-8` by default. This value is a parameter of the function and thus can easily be changed. Applying this function both values are treated as equal and makes the expected result of the computation "correct".
+Another way to handle this issue can be seen in the following code snippet. The used method `all.equal()` will try to handle computational errors allowing an error tolerance of `1.5e-8` by default. This value is a parameter of the function and thus can easily be changed. Applying this function both values are treated as equal and makes the expected result of the computation "correct".
 
 ```{r, eval = TRUE}
 x1 = 1/3
