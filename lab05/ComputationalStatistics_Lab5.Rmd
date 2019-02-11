@@ -109,7 +109,7 @@ T_value_original = test_statistics(data$X, data$Y, data$Y_hat)
 b = 2000
 
 nonparam_bootstrap = boot(lottery, statistic = f, R = b, parallel = "multicore")
-p_value_original = sum(nonparam_bootstrap$t > T_value_original) / b
+p_value_original = mean(nonparam_bootstrap$t > T_value_original)
 
 print(T_value_original)
 print(p_value_original)
@@ -140,6 +140,9 @@ by using a permutation test with statistics T. The function is to return the p-v
 
 ```{r, echo = FALSE}
 
+test_hypothesis = function (data, statistics, B) {
+  
+}
 
 ```
 
