@@ -20,12 +20,12 @@ library(knitr)
 library(readxl)
 library(ggplot2)
 library(gridExtra)
+library(boot)
 ```
 
 # Question 1: Hypothesis testing
 
 In 1970, the US Congress instituted a random selection process for the military draft. All 366 possible birth dates were placed in plastic capsules in a rotating drum and were selected one by one. The first date drawn from the drum received draft number one, the second date drawn received draft number two, etc. Then, eligible men were drafted in the order given by the draft number of their birth date. In a truly random lottery there should be no relationship between the date and the draft number. Your task is to investigate whether or not the draft numbers were randomly selected. The draft numbers ($Y=Draft No$) sorted by day of year ($X=\text{Day of year}$) are given in the file ```lottery.xls```.
-
 
 ```{r, echo = FALSE}
 
@@ -34,12 +34,13 @@ kable(head(lottery))
 
 ```
 
+<<<<<<< HEAD
 1. Make a scatterplot of Y versus X and conclude whether the lottery looks random. 
 
 ```{r, echo = FALSE}
 
 ggplot(lottery)+
-  geom_point(aes(x = Day_of_year, y = Draft_No), color = "#900C3F") +
+  geom_point(aes(x = Day_of_year, y = Draft_No), color = "#C70039") +
   labs(title = "Day of Year VS Draft Number",
        y = "Draft Number",  x = "Day of Year", color = "Legend") +
   theme_minimal()
@@ -50,31 +51,62 @@ ggplot(lottery)+
 
 2. Compute an estimate $\hat{Y} $ of the expected response as a function of $X$ by using a loess smoother (use `loess()`), put the curve $\hat{Y} $ versus $X$ in the previous graph and state again whether the lottery looks random.
 
-```{r}
+```{r, echo = FALSE}
+
 ggplot(lottery)+
-  geom_point(aes(x = Day_of_year, y = Draft_No), color = "#900C3F") +
+  geom_point(aes(x = Day_of_year, y = Draft_No), color = "#C70039") +
   geom_smooth(mapping = aes(x = Day_of_year, y = Draft_No),
-              method = "loess", size = 1.5 ) +
+              method = "loess", size = 1.5, color = "#581845") +
   labs(title = "Day of Year VS Draft Number",
        y = "Draft Number",  x = "Day of Year", color = "Legend") +
   theme_minimal()
   
 ```
 
-**Answer:** Including the insights from this smoothing we see, that the lootery actually doesn not look random. There are two reasons for this:
+**Answer:** Including the insights from this smoothing we see, that the lottery actually doesn not look random. There are two reasons for this:
 
 - The confidence interval of the curve is relatively small, especially compared to the spread of the data points.
 - The data points follow the pattern of the curve slightly, especially above the line. 
 
 3. To check whether the lottery is random, it is reasonable to use test statistics
 
-$$T = \frac{\hat{Y}(X_{b})-\hat{Y}(X_{a})}{X_{b}-X_{a}}, \: \text{where} X_b = \text{argmax}_XY(X),X_a = \text{argmin}_XY(X) $$
-$$\text{, where} X_{b} = argmax_{X}Y(X), X_{a} = argm_{inX}Y(X)  }  $$
+$$T = \frac{\hat{Y}(X_{b})-\hat{Y}(X_{a})}{X_{b}-X_{a}}, \: \text{where } X_b = \text{argmax}_XY(X),X_a = \text{argmin}_XY(X)$$
+$$\text{, where} X_{b} = argmax_{X}Y(X), X_{a} = argm_{inX}Y(X)}$$
 
 If this value is significantly greater than zero, then there should be a trend in the data and the lottery is not random. Estimate the distribution of T by using a non-parametric bootstrap with $B = 2000$ and comment whether the lottery is random or not. What is the p-value of the test?
 
 **Answer:**
 
+```{r}
+
+ind = sample(1:nrow(lottery), 2000 , replace = TRUE )
+
+hist(ind, breaks = 40)
+
+f = function(data, ind) {
+  data1 <- data[ind,] 
+  pred = predict(loess(Draft_No~Day_of_year,data1), data1$Day_of_year)
+  return(pred)
+}
+
+set.seed(12345)
+nonparam_bootstrap = boot(lottery, statistic = f, R = 2000)
+
+# Test- statistic
+T = (max(nonparam_bootstrap$t)- min(nonparam_bootstrap$t))/(max(lottery$Draft_No) - min(lottery$Draft_No))
+
+# P-Value
+cvs <- quantile(nonparam_bootstrap$t0 - nonparam_bootstrap$t + 1, 0.975)
+
+cvs
+```
+
+4. Implement a function depending on data and B that tests the hypothesis 
+
+$H_{0}$: Lottery is random versus 
+$H_{1}$: Lottery is non-random 
+
+by using a permutation test with statistics T. The function is to return the p-value of this test. Test this function on our data with $B = 2000$.
 
 
 ```{r, echo = FALSE}
@@ -83,16 +115,72 @@ If this value is significantly greater than zero, then there should be a trend i
 ```
 
 
+### Task 5. 
+
+Make a crude estimate of the power of the test constructed in Step 4:
+
+a) Generate (an obviously non-random) dataset with n = 366 observations by using same X as in the original data set and $Y(x) = max(0,min(\alpha x + \beta,366))$, where $\alpha = 0.1$ and $\beta ???N(183,sd = 10)$.
+b) Plug these data into the permutation test with B = 200 and note whether it was rejected.
+c) Repeat Steps 5a-5b for $\alpha = 0.2,0.3,...,10$.
+
+What can you say about the quality of your test statistics considering the value of the power?
+
 
 
 # Question 2: Bootstrap, jackknife and confidence intervals
 
+The data you are going to continue analyzing is the database of home prices in Albuquerque, 1993. The variables present are ```Price```; ```SqFt```: the area of a house; ```FEATS```: number of features such as dishwasher, refrigerator and so on; ```Taxes```: annual taxes paid for the house. Explore the ???le ```prices1.xls```
+
+
+```{r}
+
+prices = read_xls("prices1.xls")
+
+```
+
+### Task 1
+
+Plot the histogram of Price. Does it remind any conventional distribution? Compute the mean price.
+
+```{r}
+
+```
+
+
+### Task 2
+
+Estimate the distribution of the mean price of the house using bootstrap. Determine the bootstrap bias-correction and the variance of the mean price. Compute a 95% con???dence interval for the mean price using bootstrap percentile, bootstrap BCa, and ???rst-order normal approximation (Hint: use boot(),boot.ci(),plot.boot(),print.bootci())
+
+```{r}
+
+
+```
+
+
+
+### Task 3
+
+Estimate the variance of the mean price using the jackknife and compare it with the bootstrap estimate
 
 
 ```{r}
 
 
 ```
+
+
+
+### Task 4
+
+Compare the con???dence intervals obtained with respect to their length and the location of the estimated mean in these intervals.
+
+
+
+
+
+
+
+
 
 
 
