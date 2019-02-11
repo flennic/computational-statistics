@@ -38,7 +38,7 @@ kable(head(lottery))
 
 ```
 
-## Task 1
+## Task 1.1
 Make a scatterplot of Y versus X and conclude whether the lottery looks random. 
 
 ```{r, echo = FALSE}
@@ -53,7 +53,7 @@ ggplot(lottery)+
 
 **Answer:** In the plot, it the lottery appears to be random, because of the relatively even distribution of the points over the area.
 
-## Task 2
+## Task 1.2
 Compute an estimate $\hat{Y}$ of the expected response as a function of $X$ by using a loess smoother (use `loess()`), put the curve $\hat{Y}$ versus $X$ in the previous graph and state again whether the lottery looks random.
 
 ```{r, echo = FALSE}
@@ -73,7 +73,7 @@ ggplot(lottery)+
 - The confidence interval of the curve is relatively small, especially compared to the spread of the data points.
 - The data points follow the pattern of the curve slightly, especially above the line. 
 
-## Task 3
+## Task 1.3
 
 To check whether the lottery is random, it is reasonable to use test statistics
 
@@ -110,9 +110,8 @@ data$Y_hat = loess(Draft_No ~ Day_of_year, lottery)$fitted
 T_value_original = test_statistics(data$X, data$Y, data$Y_hat)
 
 # T for the bootstrapped samples
-b = 2000
-
-nonparam_bootstrap = boot(lottery, statistic = f, R = b, parallel = "multicore")
+nonparam_bootstrap =
+  boot(lottery, statistic = f, R = 2000, parallel = "multicore")
 p_value_original = mean(nonparam_bootstrap$t > T_value_original)
 
 print(T_value_original)
@@ -134,8 +133,8 @@ ggplot(df) +
 
 ```
 
-
-4. Implement a function depending on data and B that tests the hypothesis 
+## Task 1.4
+Implement a function depending on data and B that tests the hypothesis 
 
 $H_{0}$: Lottery is random versus 
 $H_{1}$: Lottery is non-random 
@@ -151,8 +150,7 @@ test_hypothesis = function (data, statistics, B) {
 
 ```
 
-
-### Task 5. 
+## Task 2.5
 
 Make a crude estimate of the power of the test constructed in Step 4:
 
@@ -161,8 +159,6 @@ b) Plug these data into the permutation test with B = 200 and note whether it wa
 c) Repeat Steps 5a-5b for $\alpha = 0.2,0.3,...,10$.
 
 What can you say about the quality of your test statistics considering the value of the power?
-
-
 
 # Question 2: Bootstrap, jackknife and confidence intervals
 
@@ -175,7 +171,7 @@ prices = read_xls("prices1.xls")
 
 ```
 
-### Task 1
+## Task 2.1
 
 Plot the histogram of Price. Does it remind any conventional distribution? Compute the mean price.
 
@@ -184,7 +180,7 @@ Plot the histogram of Price. Does it remind any conventional distribution? Compu
 ```
 
 
-### Task 2
+## Task 2.2
 
 Estimate the distribution of the mean price of the house using bootstrap. Determine the bootstrap bias-correction and the variance of the mean price. Compute a 95% con???dence interval for the mean price using bootstrap percentile, bootstrap BCa, and ???rst-order normal approximation (Hint: use boot(),boot.ci(),plot.boot(),print.bootci())
 
@@ -193,33 +189,18 @@ Estimate the distribution of the mean price of the house using bootstrap. Determ
 
 ```
 
-
-
-### Task 3
+## Task 2.3
 
 Estimate the variance of the mean price using the jackknife and compare it with the bootstrap estimate
-
 
 ```{r}
 
 
 ```
 
+## Task 2.4
 
-
-### Task 4
-
-Compare the con???dence intervals obtained with respect to their length and the location of the estimated mean in these intervals.
-
-
-
-
-
-
-
-
-
-
+Compare the confidence intervals obtained with respect to their length and the location of the estimated mean in these intervals.
 
 # Source Code
 
