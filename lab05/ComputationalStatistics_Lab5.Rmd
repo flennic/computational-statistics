@@ -3,25 +3,26 @@ title: "Computational Statistics - Lab 05"
 author: "Annalena Erhard (anner218) and Maximilian Pfundstein (maxpf364)"
 date: "`r Sys.Date()`"
 output:
-  pdf_document:
-    toc: true
-    toc_depth: 3
-    number_sections: true
   html_document:
     df_print: paged
     toc: true
     toc_float: false
     number_sections: false
+  pdf_document:
+    toc: true
+    toc_depth: 3
+    number_sections: true
 ---
 
 ```{r libraries, echo=FALSE, message=FALSE}
 
-knitr::opts_chunk$set(echo = TRUE, cache = FALSE, include = TRUE, eval = TRUE)
+knitr::opts_chunk$set(echo = TRUE, cache = TRUE, include = TRUE, eval = TRUE)
 library(knitr)
 library(readxl)
 library(ggplot2)
 library(gridExtra)
 library(boot)
+library(parallel)
 
 set.seed(12345)
 
@@ -83,7 +84,7 @@ If this value is significantly greater than zero, then there should be a trend i
 
 **Answer:**
 
-```{r}
+```{r, echo = TRUE}
 
 data = data.frame(X = lottery$Day_of_year, Y = lottery$Draft_No)
 
@@ -112,7 +113,11 @@ T_value_original = test_statistics(data$X, data$Y, data$Y_hat)
 # T for the bootstrapped samples
 nonparam_bootstrap =
   boot(lottery, statistic = f, R = 2000, parallel = "multicore")
-p_value_original = mean(nonparam_bootstrap$t > T_value_original)
+p_value_original = mean(nonparam_bootstrap$t > 0)
+
+```
+
+```{r}
 
 print(T_value_original)
 print(p_value_original)
@@ -141,24 +146,80 @@ $H_{1}$: Lottery is non-random
 
 by using a permutation test with statistics T. The function is to return the p-value of this test. Test this function on our data with $B = 2000$.
 
+```{r}
 
-```{r, echo = FALSE}
-
-test_hypothesis = function (data, statistics, B) {
+test_hypothesis = function (data_input, statistics, B = 2000) {
   
+  t_values = c()
+  
+  for (i in 1:B) {
+    ind = sample(1:nrow(data_input))
+    data_input$X = data_input$X[ind]
+    
+    model = loess(Y ~ X, data_input)
+  
+    t_values[i] = statistics(data_input$X,
+                            data_input$Y, Y_hat = model$fitted)
+  }
+  
+  return(mean(t_values > 0))
 }
 
+p_value_permutated = test_hypothesis(data, test_statistics, 2000)
+
+```
+
+```{r}
+print(p_value_permutated)
 ```
 
 ## Task 2.5
 
 Make a crude estimate of the power of the test constructed in Step 4:
 
-a) Generate (an obviously non-random) dataset with n = 366 observations by using same X as in the original data set and $Y(x) = max(0,min(\alpha x + \beta,366))$, where $\alpha = 0.1$ and $\beta ???N(183,sd = 10)$.
-b) Plug these data into the permutation test with B = 200 and note whether it was rejected.
+a) Generate (an obviously non-random) dataset with $n = 366$ observations by using same X as in the original data set and $Y(x) = max(0,min(\alpha x + \beta,366))$, where $\alpha = 0.1$ and $\beta \sim N(183,sd = 10)$.
+b) Plug these data into the permutation test with $B = 200$ and note whether it was rejected.
 c) Repeat Steps 5a-5b for $\alpha = 0.2,0.3,...,10$.
 
 What can you say about the quality of your test statistics considering the value of the power?
+
+```{r}
+
+simulate_data = function(X, hypothesis = test_hypothesis,
+                         statistics = test_statistics, alpha = 0.1,
+                         beta_mean = 183, beta_sd = 10, b = 200, limit = 366) {
+    
+  artificial = function(X, alpha) {
+    beta = rnorm(n = nrow(lottery), mean = beta_mean, sd = beta_sd)
+    return(max(0, min(alpha * X + beta, limit)))
+  }
+  
+  X_dataframe = X
+  Y_dateframe = sapply(X, artificial, alpha)
+  
+  data_artificial = data.frame(X_dataframe, Y_dateframe)
+  colnames(data_artificial) = c("X", "Y")
+  return(test_hypothesis(data_artificial, test_statistics, b))
+}
+
+alphas = seq(from = 0.1, to = 10.0, by = 0.1)
+
+no_cores = detectCores()
+cl = makeCluster(no_cores)
+
+clusterExport(cl, list("simulate_data", "lottery", "test_hypothesis",
+                       "test_statistics"))
+
+simulated_p_values =
+  parSapply(cl, alphas, FUN = function(alpha) {
+    simulate_data(alpha = alpha, X = lottery$Day_of_year)
+  })
+ 	
+stopCluster(cl)
+
+kable(simulated_p_values)
+
+```
 
 # Question 2: Bootstrap, jackknife and confidence intervals
 

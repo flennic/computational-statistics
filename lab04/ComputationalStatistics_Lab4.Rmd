@@ -108,11 +108,11 @@ metropolis_hastings = function(n = 1, x_0 = 1, b = 50, proposal = "lnorm",
       dlnorm(x_star, meanlog = log(xt), sdlog = 1)
     }
     else if (proposal == "chisquared") {
-      x_star = rchisq(n = 1, df = floor(xt))
+      x_star = rchisq(n = 1, df = floor(xt + 1))
       
        # Calculate correction factor C
-      c = dchisq(x = xt_1, df = floor(xt)) /
-      dchisq(x_star, df = floor(xt))
+      c = dchisq(x = xt_1, df = floor(xt + 1)) /
+      dchisq(x_star, df = floor(xt + 1))
     }
     else {
       stop("Invalid proposal.")
