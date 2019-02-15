@@ -246,7 +246,7 @@ print(prices_mean)
 ```
 
 
-```{r, echo = FALSE, warning = FALSE}
+```{r, echo = FALSE, warning = FALSE, message = FALSE}
 
 ggplot(prices) +
   geom_histogram(aes(x = prices$Price),
