@@ -3,15 +3,15 @@ title: "Computational Statistics - Lab 05"
 author: "Annalena Erhard (anner218) and Maximilian Pfundstein (maxpf364)"
 date: "`r Sys.Date()`"
 output:
+  pdf_document:
+    toc: true
+    toc_depth: 3
+    number_sections: true
   html_document:
     df_print: paged
     toc: true
     toc_float: false
     number_sections: false
-  pdf_document:
-    toc: true
-    toc_depth: 3
-    number_sections: true
 ---
 
 ```{r libraries, echo=FALSE, message=FALSE}
@@ -45,9 +45,10 @@ Make a scatterplot of Y versus X and conclude whether the lottery looks random.
 ```{r, echo = FALSE}
 
 ggplot(lottery)+
-  geom_point(aes(x = Day_of_year, y = Draft_No), color = "black", fill = "#dedede", shape = 21) +
+  geom_point(aes(x = Day_of_year, y = Draft_No), color = "black",
+             fill = "#dedede", shape = 21) +
   labs(title = "Day of Year VS Draft Number",
-       y = "Draft Number",  x = "Day of Year", color = "Legend") +
+       y = "Draft Number", x = "Day of Year", color = "Legend") +
   theme_minimal()
 
 ```
@@ -60,7 +61,8 @@ Compute an estimate $\hat{Y}$ of the expected response as a function of $X$ by u
 ```{r, echo = FALSE}
 
 ggplot(lottery)+
-  geom_point(aes(x = Day_of_year, y = Draft_No), color = "black", fill = "#dedede", shape = 21) +
+  geom_point(aes(x = Day_of_year, y = Draft_No), color = "black",
+             fill = "#dedede", shape = 21) +
   geom_smooth(mapping = aes(x = Day_of_year, y = Draft_No),
               method = "loess", size = 1.5, color = "#000000") +
   labs(title = "Day of Year VS Draft Number",
@@ -69,7 +71,7 @@ ggplot(lottery)+
   
 ```
 
-**Answer:** Including the insights from this smoothing we see, that the lottery actually doesn not look random. There are two reasons for this:
+**Answer:** Including the insights from this smoothing we see, that the lottery could have a bias. There are two reasons for this:
 
 - The confidence interval of the curve is relatively small, especially compared to the spread of the data points.
 - The data points follow the pattern of the curve slightly, especially above the line. 
@@ -163,7 +165,7 @@ test_hypothesis = function (data_input, statistics, B = 2000, T_org) {
                             data_input$Y, Y_hat = model$fitted)
   }
   
-  return(sum(t_values >= T_org)/B)
+  return(sum(abs(t_values) >= abs(T_org))/B)
 }
 
 p_value_permutated = test_hypothesis(data, test_statistics, 2000, T_value_original)
@@ -173,6 +175,8 @@ p_value_permutated = test_hypothesis(data, test_statistics, 2000, T_value_origin
 ```{r}
 print(p_value_permutated)
 ```
+
+Therefore we cannot reject the $H_0$ hypothesis.
 
 ## Crude Estimate of the Power
 
@@ -222,13 +226,35 @@ simulated_p_values =
  	
 stopCluster(cl)
 
-kable(head(simulated_p_values))
-# Make prettier if correct
-plot(simulated_p_values)
+```
+
+The following plot shows the obtained p-values with respect to $\alpha$. The orange line indicates a p-value of $0.05$. For p-values $> 0.05$ we fail to reject $H_0$. Therefore we reject all p-values below this threshold (this is the answer to question `b`).
+
+```{r, echo = FALSE}
+
+df = data.frame(alphas, simulated_p_values)
+
+ggplot(df)+
+  geom_point(aes(x = alphas, y = simulated_p_values), color = "black",
+             fill = "#dedede", shape = 21) +
+  geom_hline(aes(yintercept = 0.05), color = "orange") +
+  labs(title = "p-values depending on alpha",
+       y = "p-value",  x = "Alpha", color = "Legend") +
+  theme_minimal()
 
 ```
 
-# Question 2: Bootstrap, jackknife and confidence intervals
+The calculate the power we need to count how often we failed to reject $H_0$ as we know that our sample is indeed not random ($H_1$). This value is the type II error. The power is calculated by $1 - \text{type II error}$ and is therefore:
+
+```{r}
+
+1 - mean(simulated_p_values > 0.05)
+
+```
+
+We see that for $\alpha$s around $1.0$ we fail to reject the $H_0$ hypothesis. As this is a two-sided test we expect some values where we fail to reject $H_0$ which we can observe here.
+
+# Question 2: Bootstrap, Jackknife and Confidence Intervals
 
 The data you are going to continue analyzing is the database of home prices in Albuquerque, 1993. The variables present are ```Price```; ```SqFt```: the area of a house; ```FEATS```: number of features such as dishwasher, refrigerator and so on; ```Taxes```: annual taxes paid for the house. Explore the file ```prices1.xls```.
 
@@ -243,7 +269,7 @@ kable(head(prices))
 
 **Task:** Plot the histogram of Price. Does it remind any conventional distribution? Compute the mean price.
 
-**Answer:** It looks like a Chi-Squared distribution with $k = 4$. The mean of the price is given by:
+**Answer:** It looks like a Gamma distribution. The mean of the price is given by:
 
 ```{r, echo = FALSE}
 
@@ -252,12 +278,10 @@ print(prices_mean)
 
 ```
 
-
 ```{r, echo = FALSE, warning = FALSE, message = FALSE}
 
 ggplot(prices) +
-  geom_histogram(aes(x = prices$Price),
-                 color = "black", fill = "#dedede") +
+  geom_histogram(aes(x = prices$Price, y=..density..), color = "black", fill = "#dedede") +
   geom_vline(aes(xintercept = prices_mean), color = "#FFC300") +
   labs(title = "Histrogram of Prices",
        y = "Density",
@@ -383,7 +407,6 @@ boostrap_estimated_mean_corrected = (2 * prices_mean - bootstrap_mean_price)
 
 ```
 
-
 ### Boostrap Percentile
 
 The length of the CI is:
@@ -398,7 +421,8 @@ The mean is located the following "percent" of the CI range.
 
 ```{r, echo = FALSE}
 
-(boostrap_estimated_mean_corrected - confidence_interval$percent[4]) / (confidence_interval$percent[5] - confidence_interval$percent[4]) * 100
+(boostrap_estimated_mean_corrected - confidence_interval$percent[4]) /
+  (confidence_interval$percent[5] - confidence_interval$percent[4]) * 100
 
 ```
 
@@ -407,8 +431,11 @@ The mean is located the following "percent" of the CI range.
 ggplot(prices) +
   geom_histogram(aes(x = prices$Price),
                  color = "#000000", fill = "#dedede") +
-  annotate("rect", xmin=confidence_interval$percent[4], xmax=confidence_interval$percent[5], ymin=0, ymax=Inf, alpha=0.5, fill="#86b4ff") +
-  geom_vline(aes(xintercept = boostrap_estimated_mean_corrected), color = "orange") +
+  annotate("rect", xmin=confidence_interval$percent[4],
+           xmax=confidence_interval$percent[5], ymin=0, ymax=Inf,
+           alpha=0.5, fill="#86b4ff") +
+  geom_vline(aes(xintercept = boostrap_estimated_mean_corrected),
+             color = "orange") +
   labs(title = "Histrogram of Prices",
        y = "Density",
   x = "Prices", color = "Legend") +
@@ -431,7 +458,8 @@ The mean is located the following "percent" of the CI range.
 
 ```{r, echo = FALSE}
 
-(boostrap_estimated_mean_corrected - confidence_interval$bca[4]) / (confidence_interval$bca[5] - confidence_interval$bca[4]) * 100
+(boostrap_estimated_mean_corrected - confidence_interval$bca[4]) /
+  (confidence_interval$bca[5] - confidence_interval$bca[4]) * 100
 
 ```
 
@@ -440,8 +468,11 @@ The mean is located the following "percent" of the CI range.
 ggplot(prices) +
   geom_histogram(aes(x = prices$Price),
                  color = "#000000", fill = "#dedede") +
-  annotate("rect", xmin=confidence_interval$bca[4], xmax=confidence_interval$bca[5], ymin=0, ymax=Inf, alpha=0.5, fill="#86b4ff") +
-  geom_vline(aes(xintercept = boostrap_estimated_mean_corrected), color = "orange") +
+  annotate("rect", xmin=confidence_interval$bca[4],
+           xmax=confidence_interval$bca[5], ymin=0, ymax=Inf,
+           alpha=0.5, fill="#86b4ff") +
+  geom_vline(aes(xintercept = boostrap_estimated_mean_corrected),
+             color = "orange") +
   labs(title = "Histrogram of Prices",
        y = "Density",
   x = "Prices", color = "Legend") +
@@ -463,7 +494,8 @@ The mean is located the following "percent" of the CI range.
 
 ```{r, echo = FALSE}
 
-(boostrap_estimated_mean_corrected - confidence_interval$normal[2]) / (confidence_interval$normal[3] - confidence_interval$normal[2]) * 100
+(boostrap_estimated_mean_corrected - confidence_interval$normal[2]) /
+  (confidence_interval$normal[3] - confidence_interval$normal[2]) * 100
 
 ```
 
@@ -472,8 +504,11 @@ The mean is located the following "percent" of the CI range.
 ggplot(prices) +
   geom_histogram(aes(x = prices$Price),
                  color = "#000000", fill = "#dedede") +
-  annotate("rect", xmin=confidence_interval$normal[2], xmax=confidence_interval$normal[3], ymin=0, ymax=Inf, alpha=0.5, fill="#86b4ff") +
-  geom_vline(aes(xintercept = boostrap_estimated_mean_corrected), color = "orange") +
+  annotate("rect", xmin=confidence_interval$normal[2],
+           xmax=confidence_interval$normal[3], ymin=0, ymax=Inf,
+           alpha=0.5, fill="#86b4ff") +
+  geom_vline(aes(xintercept = boostrap_estimated_mean_corrected),
+             color = "orange") +
   labs(title = "Histrogram of Prices",
        y = "Density",
   x = "Prices", color = "Legend") +
