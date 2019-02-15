@@ -3,20 +3,20 @@ title: "Computational Statistics - Lab 05"
 author: "Annalena Erhard (anner218) and Maximilian Pfundstein (maxpf364)"
 date: "`r Sys.Date()`"
 output:
+  pdf_document:
+    toc: true
+    toc_depth: 3
+    number_sections: true
   html_document:
     df_print: paged
     toc: true
     toc_float: false
     number_sections: false
-  pdf_document:
-    toc: true
-    toc_depth: 3
-    number_sections: true
 ---
 
 ```{r libraries, echo=FALSE, message=FALSE}
 
-knitr::opts_chunk$set(echo = TRUE, cache = TRUE, include = TRUE, eval = TRUE)
+knitr::opts_chunk$set(echo = TRUE, cache = FALSE, include = TRUE, eval = TRUE)
 library(knitr)
 library(readxl)
 library(ggplot2)
@@ -39,7 +39,7 @@ kable(head(lottery))
 
 ```
 
-## Task 1.1
+## Scatterplot of Day of Year vs Draft Number
 Make a scatterplot of Y versus X and conclude whether the lottery looks random. 
 
 ```{r, echo = FALSE}
@@ -54,7 +54,7 @@ ggplot(lottery)+
 
 **Answer:** In the plot, it the lottery appears to be random, because of the relatively even distribution of the points over the area.
 
-## Task 1.2
+## Loess Smoother
 Compute an estimate $\hat{Y}$ of the expected response as a function of $X$ by using a loess smoother (use `loess()`), put the curve $\hat{Y}$ versus $X$ in the previous graph and state again whether the lottery looks random.
 
 ```{r, echo = FALSE}
@@ -74,7 +74,7 @@ ggplot(lottery)+
 - The confidence interval of the curve is relatively small, especially compared to the spread of the data points.
 - The data points follow the pattern of the curve slightly, especially above the line. 
 
-## Task 1.3
+## Randomness of Lottery using a Test Statistics
 
 To check whether the lottery is random, it is reasonable to use test statistics
 
@@ -138,7 +138,7 @@ ggplot(df) +
 
 ```
 
-## Task 1.4
+## Hypothesis Testing
 Implement a function depending on data and B that tests the hypothesis 
 
 $H_{0}$: Lottery is random versus 
@@ -173,7 +173,7 @@ p_value_permutated = test_hypothesis(data, test_statistics, 2000)
 print(p_value_permutated)
 ```
 
-## Task 2.5
+## Crude Estimate of the Power
 
 Make a crude estimate of the power of the test constructed in Step 4:
 
@@ -217,49 +217,156 @@ simulated_p_values =
  	
 stopCluster(cl)
 
-kable(simulated_p_values)
+kable(head(simulated_p_values))
 
 ```
 
 # Question 2: Bootstrap, jackknife and confidence intervals
 
-The data you are going to continue analyzing is the database of home prices in Albuquerque, 1993. The variables present are ```Price```; ```SqFt```: the area of a house; ```FEATS```: number of features such as dishwasher, refrigerator and so on; ```Taxes```: annual taxes paid for the house. Explore the ???le ```prices1.xls```
+The data you are going to continue analyzing is the database of home prices in Albuquerque, 1993. The variables present are ```Price```; ```SqFt```: the area of a house; ```FEATS```: number of features such as dishwasher, refrigerator and so on; ```Taxes```: annual taxes paid for the house. Explore the file ```prices1.xls```.
 
-
-```{r}
+```{r, echo = FALSE}
 
 prices = read_xls("prices1.xls")
+kable(head(prices))
 
 ```
 
-## Task 2.1
+## Histrogram of the Price
 
-Plot the histogram of Price. Does it remind any conventional distribution? Compute the mean price.
+**Task:** Plot the histogram of Price. Does it remind any conventional distribution? Compute the mean price.
+
+**Answer:** It looks like a Chi-Squared distribution with $k = 4$. The mean of the price is given by:
+
+```{r, echo = FALSE}
+
+prices_mean = mean(prices$Price)
+print(prices_mean)
+
+```
+
+
+```{r, echo = FALSE, warning = FALSE}
+
+ggplot(prices) +
+  geom_histogram(aes(x = prices$Price),
+                 color = "#000000", fill = "#C70039") +
+  geom_vline(aes(xintercept = prices_mean), color = "#581845") +
+  labs(title = "Histrogram of Prices",
+       y = "Density",
+  x = "Prices", color = "Legend") +
+  theme_minimal()
+
+```
+
+
+## Distribution Mean and Variance Estimate and Confidence Intervals
+
+Estimate the distribution of the mean price of the house using bootstrap. Determine the bootstrap bias-correction and the variance of the mean price. Compute a 95% confidence interval for the mean price using bootstrap percentile, bootstrap BCa, and first-order normal approximation.
+
+(**Hint**: use `boot()`, `boot.ci()`, `plot.boot()`, `print.bootci()`)
 
 ```{r}
 
+f_prices = function(data, ind) {
+  data1 = data[ind,]
+  
+  return(mean(data1$Price))
+}
+
+house_bootstrap = boot(prices, statistic = f_prices, R = 2000,
+                       parallel = "multicore")
+
+plot(house_bootstrap)
+
 ```
 
+The estimate of the mean price is:
 
-## Task 2.2
+```{r, echo = FALSE}
 
-Estimate the distribution of the mean price of the house using bootstrap. Determine the bootstrap bias-correction and the variance of the mean price. Compute a 95% con???dence interval for the mean price using bootstrap percentile, bootstrap BCa, and ???rst-order normal approximation (Hint: use boot(),boot.ci(),plot.boot(),print.bootci())
+bootstrap_mean_price = mean(house_bootstrap$t)
+print(bootstrap_mean_price)
+
+```
+
+The bootstrap bias-correction is given by the following values. The first one is the bias-correction and the second one is the bias corrected mean.
+
+```{r, echo = FALSE}
+
+print(prices_mean - bootstrap_mean_price)
+# The next line according to slides, but does this make sense?
+print(2 * prices_mean - bootstrap_mean_price)
+
+```
+
+The variance of the mean price is given by:
+
+```{r, echo = FALSE}
+
+bootstrap_mean_price = as.numeric(var(house_bootstrap$t))
+# bootstrap_mean_price = 1 / (B-1) * sum((house_bootstrap$t -
+#                                         mean(house_bootstrap$t))^2)
+
+print(bootstrap_mean_price)
+
+```
+
+Now we will create the 95% confidence intervals.
+
+```{r, warning = FALSE}
+
+confidence_interval = boot.ci(house_bootstrap)
+print(confidence_interval)
+
+```
+
+As this output does not include the BCa, we will print the intervals manually. Note that the last to values in each row represent the confidence interval.
 
 ```{r}
 
+confidence_interval$percent
+confidence_interval$bca
+confidence_interval$normal
 
 ```
 
-## Task 2.3
+## Variance Estimate using Jackknife
 
-Estimate the variance of the mean price using the jackknife and compare it with the bootstrap estimate
+Estimate the variance of the mean price using the jackknife and compare it with the bootstrap estimate.
 
 ```{r}
 
+f_prices_jackknife = function(ind, data) {
+  data1 = data[-ind,]
+  return(mean(data1$Price))
+}
+
+# First create the statistics using jackknife
+
+n = length(prices$Price)
+
+indices = seq(from = 1, to = n, by = 1)
+jackknife_statistics = sapply(indices, f_prices_jackknife, prices)
+
+# For the variance estimate we will first calculate Ti_star
+Ti_star = sapply(jackknife_statistics, FUN = function(tdi, n, prices_mean) {
+  return(n * prices_mean - ((n - 1) * tdi))
+}, n = n, prices_mean = prices_mean)
+
+# Now we calculate J_T
+J_T = mean(Ti_star)
+
+# And now we can calculate the Variance
+variance_jackknife = 1 / (n * (n - 1)) * sum((Ti_star - J_T)^2)
+
+print(variance_jackknife)
 
 ```
 
-## Task 2.4
+We see that the variance using jackknife is slightly higher compared to using bootstrap.
+
+## Confidence Intervals with Respect to Length and Location
 
 Compare the confidence intervals obtained with respect to their length and the location of the estimated mean in these intervals.
 
