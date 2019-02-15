@@ -3,15 +3,15 @@ title: "Computational Statistics - Lab 05"
 author: "Annalena Erhard (anner218) and Maximilian Pfundstein (maxpf364)"
 date: "`r Sys.Date()`"
 output:
-  pdf_document:
-    toc: true
-    toc_depth: 3
-    number_sections: true
   html_document:
     df_print: paged
     toc: true
     toc_float: false
     number_sections: false
+  pdf_document:
+    toc: true
+    toc_depth: 3
+    number_sections: true
 ---
 
 ```{r libraries, echo=FALSE, message=FALSE}
@@ -148,11 +148,12 @@ by using a permutation test with statistics T. The function is to return the p-v
 
 ```{r}
 
-test_hypothesis = function (data_input, statistics, B = 2000) {
+test_hypothesis = function (data_input, statistics, B = 2000, T_org) {
   
-  t_values = c()
+  t_values = rep(NA, B)
   
   for (i in 1:B) {
+    
     ind = sample(1:nrow(data_input))
     data_input$X = data_input$X[ind]
     
@@ -162,10 +163,10 @@ test_hypothesis = function (data_input, statistics, B = 2000) {
                             data_input$Y, Y_hat = model$fitted)
   }
   
-  return(mean(t_values > 0))
+  return(sum(t_values >= T_org)/B)
 }
 
-p_value_permutated = test_hypothesis(data, test_statistics, 2000)
+p_value_permutated = test_hypothesis(data, test_statistics, 2000, T_value_original)
 
 ```
 
@@ -185,7 +186,7 @@ What can you say about the quality of your test statistics considering the value
 
 ```{r}
 
-simulate_data = function(X, hypothesis = test_hypothesis,
+simulate_data = function(X, Y_hat, hypothesis = test_hypothesis,
                          statistics = test_statistics, alpha = 0.1,
                          beta_mean = 183, beta_sd = 10, b = 200, limit = 366) {
     
@@ -196,10 +197,14 @@ simulate_data = function(X, hypothesis = test_hypothesis,
   
   X_dataframe = X
   Y_dateframe = sapply(X, artificial, alpha)
+  Y_hat_dataframe = Y_hat
   
-  data_artificial = data.frame(X_dataframe, Y_dateframe)
-  colnames(data_artificial) = c("X", "Y")
-  return(test_hypothesis(data_artificial, test_statistics, b))
+  data_artificial = data.frame(X_dataframe, Y_dateframe, Y_hat_dataframe)
+  colnames(data_artificial) = c("X", "Y", "Y_hat")
+  
+  T_val = test_statistics(data_artificial$X, data_artificial$Y, data_artificial$Y_hat)
+  
+  return(test_hypothesis(data_artificial, statistics, b, T_val))
 }
 
 alphas = seq(from = 0.1, to = 10.0, by = 0.1)
@@ -208,16 +213,18 @@ no_cores = detectCores()
 cl = makeCluster(no_cores)
 
 clusterExport(cl, list("simulate_data", "lottery", "test_hypothesis",
-                       "test_statistics"))
+                       "test_statistics", "data"))
 
 simulated_p_values =
   parSapply(cl, alphas, FUN = function(alpha) {
-    simulate_data(alpha = alpha, X = lottery$Day_of_year)
+    simulate_data(alpha = alpha, X = lottery$Day_of_year, Y_hat = data$Y_hat)
   })
  	
 stopCluster(cl)
 
 kable(head(simulated_p_values))
+# Make prettier if correct
+plot(simulated_p_values)
 
 ```
 

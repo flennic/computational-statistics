@@ -316,7 +316,8 @@ p_value_permutated = test_hypothesis(data, test_statistics, 2000)</code></pre>
   
   data_artificial = data.frame(X_dataframe, Y_dateframe)
   colnames(data_artificial) = c(&quot;X&quot;, &quot;Y&quot;)
-  return(test_hypothesis(data_artificial, test_statistics, b))
+  
+  return(test_hypothesis(data_artificial, statistics, b))
 }
 
 alphas = seq(from = 0.1, to = 10.0, by = 0.1)
@@ -343,22 +344,22 @@ kable(head(simulated_p_values))</code></pre>
 </thead>
 <tbody>
 <tr class="odd">
-<td align="right">0.470</td>
-</tr>
-<tr class="even">
-<td align="right">0.525</td>
-</tr>
-<tr class="odd">
-<td align="right">0.515</td>
+<td align="right">0.480</td>
 </tr>
 <tr class="even">
 <td align="right">0.495</td>
 </tr>
 <tr class="odd">
-<td align="right">0.480</td>
+<td align="right">0.505</td>
 </tr>
 <tr class="even">
-<td align="right">0.465</td>
+<td align="right">0.510</td>
+</tr>
+<tr class="odd">
+<td align="right">0.490</td>
+</tr>
+<tr class="even">
+<td align="right">0.515</td>
 </tr>
 </tbody>
 </table>
@@ -643,7 +644,8 @@ simulate_data = function(X, hypothesis = test_hypothesis,
   
   data_artificial = data.frame(X_dataframe, Y_dateframe)
   colnames(data_artificial) = c(&quot;X&quot;, &quot;Y&quot;)
-  return(test_hypothesis(data_artificial, test_statistics, b))
+  
+  return(test_hypothesis(data_artificial, statistics, b))
 }
 
 alphas = seq(from = 0.1, to = 10.0, by = 0.1)
