@@ -45,7 +45,7 @@ Make a scatterplot of Y versus X and conclude whether the lottery looks random.
 ```{r, echo = FALSE}
 
 ggplot(lottery)+
-  geom_point(aes(x = Day_of_year, y = Draft_No), color = "#C70039") +
+  geom_point(aes(x = Day_of_year, y = Draft_No), color = "black", fill = "#dedede", shape = 21) +
   labs(title = "Day of Year VS Draft Number",
        y = "Draft Number",  x = "Day of Year", color = "Legend") +
   theme_minimal()
@@ -60,7 +60,7 @@ Compute an estimate $\hat{Y}$ of the expected response as a function of $X$ by u
 ```{r, echo = FALSE}
 
 ggplot(lottery)+
-  geom_point(aes(x = Day_of_year, y = Draft_No), color = "#C70039") +
+  geom_point(aes(x = Day_of_year, y = Draft_No), color = "black", fill = "#dedede", shape = 21) +
   geom_smooth(mapping = aes(x = Day_of_year, y = Draft_No),
               method = "loess", size = 1.5, color = "#000000") +
   labs(title = "Day of Year VS Draft Number",
@@ -129,9 +129,9 @@ print(p_value_original)
 df = data.frame(nonparam_bootstrap$t)
 
 ggplot(df) +
-  geom_density(aes(x = nonparam_bootstrap.t), color = "#c70039",
-               fill = "#C70039", alpha = 0.25) +
-  geom_vline(aes(xintercept = T_value_original), color = "#581845") +
+  geom_density(aes(x = nonparam_bootstrap.t), color = "black",
+               fill = "#dedede", alpha = 0.25) +
+  geom_vline(aes(xintercept = T_value_original), color = "orange") +
   labs(title = "Density of non-parametric T-Values",
        y = "Density",  x = "T-Value", color = "Legend") +
   theme_minimal()
@@ -250,8 +250,8 @@ print(prices_mean)
 
 ggplot(prices) +
   geom_histogram(aes(x = prices$Price),
-                 color = "#000000", fill = "#C70039") +
-  geom_vline(aes(xintercept = prices_mean), color = "#581845") +
+                 color = "black", fill = "#dedede") +
+  geom_vline(aes(xintercept = prices_mean), color = "#FFC300") +
   labs(title = "Histrogram of Prices",
        y = "Density",
   x = "Prices", color = "Legend") +
@@ -295,7 +295,6 @@ The bootstrap bias-correction is given by the following values. The first one is
 ```{r, echo = FALSE}
 
 print(prices_mean - bootstrap_mean_price)
-# The next line according to slides, but does this make sense?
 print(2 * prices_mean - bootstrap_mean_price)
 
 ```
@@ -304,11 +303,11 @@ The variance of the mean price is given by:
 
 ```{r, echo = FALSE}
 
-bootstrap_mean_price = as.numeric(var(house_bootstrap$t))
+bootstrap_variance_price = as.numeric(var(house_bootstrap$t))
 # bootstrap_mean_price = 1 / (B-1) * sum((house_bootstrap$t -
 #                                         mean(house_bootstrap$t))^2)
 
-print(bootstrap_mean_price)
+print(bootstrap_variance_price)
 
 ```
 
@@ -343,7 +342,6 @@ f_prices_jackknife = function(ind, data) {
 }
 
 # First create the statistics using jackknife
-
 n = length(prices$Price)
 
 indices = seq(from = 1, to = n, by = 1)
@@ -368,7 +366,113 @@ We see that the variance using jackknife is slightly higher compared to using bo
 
 ## Confidence Intervals with Respect to Length and Location
 
-Compare the confidence intervals obtained with respect to their length and the location of the estimated mean in these intervals.
+**Task:** Compare the confidence intervals obtained with respect to their length and the location of the estimated mean in these intervals.
+
+**Answer:** The following plots show the confidence interval and the estimated mean using bootstrap. The mean includes the bias correction.
+
+```{r, echo = FALSE}
+
+boostrap_estimated_mean_corrected = (2 * prices_mean - bootstrap_mean_price)
+
+```
+
+
+### Boostrap Percentile
+
+The length of the CI is:
+
+```{r, echo = FALSE}
+
+print(confidence_interval$percent[5] - confidence_interval$percent[4])
+
+```
+
+The mean is located the following "percent" of the CI range.
+
+```{r, echo = FALSE}
+
+(boostrap_estimated_mean_corrected - confidence_interval$percent[4]) / (confidence_interval$percent[5] - confidence_interval$percent[4]) * 100
+
+```
+
+```{r, echo = FALSE, message = FALSE}
+
+ggplot(prices) +
+  geom_histogram(aes(x = prices$Price),
+                 color = "#000000", fill = "#dedede") +
+  annotate("rect", xmin=confidence_interval$percent[4], xmax=confidence_interval$percent[5], ymin=0, ymax=Inf, alpha=0.5, fill="#86b4ff") +
+  geom_vline(aes(xintercept = boostrap_estimated_mean_corrected), color = "orange") +
+  labs(title = "Histrogram of Prices",
+       y = "Density",
+  x = "Prices", color = "Legend") +
+  theme_minimal()
+
+```
+
+
+### Bootstrap BCa
+
+The length of the CI is:
+
+```{r, echo = FALSE}
+
+print(confidence_interval$bca[5] - confidence_interval$bca[4])
+
+```
+
+The mean is located the following "percent" of the CI range.
+
+```{r, echo = FALSE}
+
+(boostrap_estimated_mean_corrected - confidence_interval$bca[4]) / (confidence_interval$bca[5] - confidence_interval$bca[4]) * 100
+
+```
+
+```{r, echo = FALSE, message = FALSE}
+
+ggplot(prices) +
+  geom_histogram(aes(x = prices$Price),
+                 color = "#000000", fill = "#dedede") +
+  annotate("rect", xmin=confidence_interval$bca[4], xmax=confidence_interval$bca[5], ymin=0, ymax=Inf, alpha=0.5, fill="#86b4ff") +
+  geom_vline(aes(xintercept = boostrap_estimated_mean_corrected), color = "orange") +
+  labs(title = "Histrogram of Prices",
+       y = "Density",
+  x = "Prices", color = "Legend") +
+  theme_minimal()
+
+```
+
+### First-Order Normal Approximation
+
+The length of the CI is:
+
+```{r, echo = FALSE}
+
+print(confidence_interval$normal[3] - confidence_interval$normal[2])
+
+```
+
+The mean is located the following "percent" of the CI range.
+
+```{r, echo = FALSE}
+
+(boostrap_estimated_mean_corrected - confidence_interval$normal[2]) / (confidence_interval$normal[3] - confidence_interval$normal[2]) * 100
+
+```
+
+```{r, echo = FALSE, message = FALSE}
+
+ggplot(prices) +
+  geom_histogram(aes(x = prices$Price),
+                 color = "#000000", fill = "#dedede") +
+  annotate("rect", xmin=confidence_interval$normal[2], xmax=confidence_interval$normal[3], ymin=0, ymax=Inf, alpha=0.5, fill="#86b4ff") +
+  geom_vline(aes(xintercept = boostrap_estimated_mean_corrected), color = "orange") +
+  labs(title = "Histrogram of Prices",
+       y = "Density",
+  x = "Prices", color = "Legend") +
+  theme_minimal()
+
+```
 
 # Source Code
 
