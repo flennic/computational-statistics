@@ -252,7 +252,6 @@ gelman_rubin_factor = function(sequence_matrix) {
   n = ncol(sequence_matrix)
   
   B = n/(k-1) * sum((rowMeans(sequence_matrix) - mean(sequence_matrix))^2)
-  # S_squared = colSums((sequence_matrix - rowMeans(sequence_matrix))^2 / (n - 1))
   S_squared = rowSums((sequence_matrix - rowMeans(sequence_matrix))^2 / (n - 1))
   W = sum(S_squared / k)
   V = ((n - 1) / n * W) + (1/n * B)
