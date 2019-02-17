@@ -126,6 +126,10 @@ print(p_value_original)
 
 ```
 
+As it can be seen here, the value of the test statistics is negative. This indicates the randomness of the lottery. 
+The p-value could be calculated as 0.0495. It states that with a probability of less than 5 percent the Null Hypothesis is true. The Null Hypothesis (the lottery is not random) can therefore be rejected at a significance level of 95%.
+
+
 ```{r, echo = FALSE}
 
 df = data.frame(nonparam_bootstrap$t)
@@ -176,7 +180,7 @@ p_value_permutated = test_hypothesis(data, test_statistics, 2000, T_value_origin
 print(p_value_permutated)
 ```
 
-Therefore we cannot reject the $H_0$ hypothesis.
+Therefore $H_0$ hypothesis can not be rejected at a significance level of the value seen above.
 
 ## Crude Estimate of the Power
 
@@ -321,7 +325,7 @@ print(bootstrap_mean_price)
 
 ```
 
-The bootstrap bias-correction is given by the following values. The first one is the bias-correction and the second one is the bias corrected mean.
+The bootstrap-bias-correction is given by the following values. The first one is the bias-correction and the second one is the bias corrected mean.
 
 ```{r, echo = FALSE}
 
