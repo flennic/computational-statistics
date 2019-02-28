@@ -80,11 +80,11 @@ e. Add the final observations to the current plot in another colour.
 ```{r, echo = FALSE}
 
 sequence = seq(from = 0, to = 30, by = 0.1)
-f.sequence. = f(sequence)
-df = data.frame(sequence, f.sequence.)
+f.sequence = f(sequence)
+df = data.frame(sequence, f.sequence)
 
 ggplot(df) +
-  geom_line(aes(x = sequence, y = f.sequence.), color = "#C70039") +
+  geom_line(aes(x = sequence, y = f.sequence), color = "#C70039") +
   labs(title = "f(x)", y = "f(x)", x = "x") +
   theme_minimal()
 
@@ -94,7 +94,7 @@ We see as maximum value at `x`:
 
 ```{r, echo = FALSE}
 
-print(sequence[which.max(f.sequence.)])
+print(sequence[which.max(f.sequence)])
 
 ```
 
@@ -102,7 +102,7 @@ With `f(x)`:
 
 ```{r}
 
-print(max(f.sequence.))
+print(max(f.sequence))
 
 ```
 
@@ -163,11 +163,11 @@ best_individual = genetic(X, Values, 100, 0.05)$best
 
 ```{r, echo = FALSE}
 
-df = data.frame(sequence, f.sequence.)
+df = data.frame(sequence, f.sequence)
 best_individual = as.data.frame(best_individual)
 
 ggplot(df) +
-  geom_line(aes(x = sequence, y = f.sequence.), color = "#C70039") +
+  geom_line(aes(x = sequence, y = f.sequence), color = "#C70039") +
   geom_point(aes(x = cx, y = cy ), data = best_individual, color = "black",
             fill = "#7BA9FF", shape = 21, size = 3, stroke = 2) +
   labs(title = "f(x)", y = "f(x)", x = "x") +
@@ -182,11 +182,11 @@ ggplot(df) +
 
 ```{r, echo = FALSE}
 
-df = data.frame(sequence, f.sequence.)
+df = data.frame(sequence, f.sequence)
 initial.population = data.frame(X, Values)
 
 ggplot(df) +
-  geom_line(aes(x = sequence, y = f.sequence.), color = "#C70039") +
+  geom_line(aes(x = sequence, y = f.sequence), color = "#C70039") +
   geom_point(aes(x = X, y = Values ), data = initial.population, color = "black",
             fill = "#DAF7A6", shape = 21, size = 3, stroke = 2) +
   labs(title = "f(x)", y = "f(x)", x = "x") +
@@ -226,7 +226,7 @@ population6 = data.frame(genetic6$population, f(genetic6$population))
 best6 = as.data.frame(genetic6$best)
 
 p1 = ggplot(df) +
-  geom_line(aes(x = sequence, y = f.sequence.), color = "#C70039") +
+  geom_line(aes(x = sequence, y = f.sequence), color = "#C70039") +
   geom_point(aes(x = genetic1.population, y = f.genetic1.population.),
              data = population1, color = "black",
             fill = "#FFC300", shape = 21, size = 2, stroke = 1) +
@@ -236,7 +236,7 @@ p1 = ggplot(df) +
   theme_minimal()
 
 p2 = ggplot(df) +
-  geom_line(aes(x = sequence, y = f.sequence.), color = "#C70039") +
+  geom_line(aes(x = sequence, y = f.sequence), color = "#C70039") +
   geom_point(aes(x = genetic2.population, y = f.genetic2.population.),
              data = population2, color = "black",
             fill = "#FFC300", shape = 21, size = 2, stroke = 1) +
@@ -246,7 +246,7 @@ p2 = ggplot(df) +
   theme_minimal()
 
 p3 = ggplot(df) +
-  geom_line(aes(x = sequence, y = f.sequence.), color = "#C70039") +
+  geom_line(aes(x = sequence, y = f.sequence), color = "#C70039") +
   geom_point(aes(x = genetic3.population, y = f.genetic3.population.),
              data = population3, color = "black",
             fill = "#FFC300", shape = 21, size = 2, stroke = 1) +
@@ -256,7 +256,7 @@ p3 = ggplot(df) +
   theme_minimal()
 
 p4 = ggplot(df) +
-  geom_line(aes(x = sequence, y = f.sequence.), color = "#C70039") +
+  geom_line(aes(x = sequence, y = f.sequence), color = "#C70039") +
   geom_point(aes(x = genetic4.population, y = f.genetic4.population.),
              data = population4, color = "black",
             fill = "#FFC300", shape = 21, size = 2, stroke = 1) +
@@ -266,7 +266,7 @@ p4 = ggplot(df) +
   theme_minimal()
 
 p5 = ggplot(df) +
-  geom_line(aes(x = sequence, y = f.sequence.), color = "#C70039") +
+  geom_line(aes(x = sequence, y = f.sequence), color = "#C70039") +
   geom_point(aes(x = genetic5.population, y = f.genetic5.population.),
              data = population5, color = "black",
             fill = "#FFC300", shape = 21, size = 2, stroke = 1) +
@@ -276,7 +276,7 @@ p5 = ggplot(df) +
   theme_minimal()
 
 p6 = ggplot(df) +
-  geom_line(aes(x = sequence, y = f.sequence.), color = "#C70039") +
+  geom_line(aes(x = sequence, y = f.sequence), color = "#C70039") +
   geom_point(aes(x = genetic6.population, y = f.genetic6.population.),
              data = population6, color = "black",
             fill = "#FFC300", shape = 21, size = 2, stroke = 1) +
@@ -352,8 +352,9 @@ $$Y_i \sim \frac{X_i}{\lambda}  e^{-X_i/\lambda}, \quad Z_i \sim \frac{X_i}{2\la
 
 The log likelihood is the log of the product of the two distributions and thus given by:
 
-$$\mathcal{L}(\lambda|Y,Z) = ln\left(\prod_{i=1}^{n} \frac{X_i}{\lambda} e^{-X_i/\lambda}  * \frac{X_i}{2\lambda} e^{-X_i/2\lambda}\right)$$ 
-We take out the variables that do not depend on the product:
+$$\mathcal{L}(\lambda|Y,Z) \sim ln\left(\prod_{i=1}^{n} \frac{X_i}{\lambda} e^{-X_i/\lambda}  * \frac{X_i}{2\lambda} e^{-X_i/2\lambda}\right)$$
+
+We take out the variables that do not depend on the product and we plug in the actual function values:
 
 $$ \mathcal{L}(\lambda|Y,Z) = ln \left( \left( \frac{1}{2\lambda^2} \right)^n  \prod_{i=1}^{n} X_i^2 e^{\frac{1}{\lambda}(X_iY_i + \frac{X_i}{2}Z_i)}  \right) $$
 
