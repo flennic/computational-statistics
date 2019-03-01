@@ -3,15 +3,15 @@ title: "Computational Statistics - Lab 05"
 author: "Annalena Erhard (anner218) and Maximilian Pfundstein (maxpf364)"
 date: "`r Sys.Date()`"
 output:
-  pdf_document:
-    toc: true
-    toc_depth: 3
-    number_sections: true
   html_document:
     df_print: paged
     toc: true
     toc_float: false
     number_sections: false
+  pdf_document:
+    toc: true
+    toc_depth: 3
+    number_sections: true
 ---
 
 ```{r libraries, echo=FALSE, message=FALSE}
@@ -108,7 +108,7 @@ f = function(data, ind) {
   return(T_value)
 }
 
-# T(D) for te original data
+# T(D) for the original data
 data$Y_hat = loess(Draft_No ~ Day_of_year, lottery)$fitted
 T_value_original = test_statistics(data$X, data$Y, data$Y_hat)
 
@@ -201,6 +201,9 @@ simulate_data = function(X, Y_hat, hypothesis = test_hypothesis,
   
   X_dataframe = X
   Y_dateframe = sapply(X, artificial, alpha)
+  
+  Y_hat = loess(Y_dateframe ~ X_dataframe)$fitted
+  
   Y_hat_dataframe = Y_hat
   
   data_artificial = data.frame(X_dataframe, Y_dateframe, Y_hat_dataframe)
@@ -437,7 +440,7 @@ ggplot(prices) +
   geom_vline(aes(xintercept = boostrap_estimated_mean_corrected),
              color = "orange") +
   labs(title = "Histrogram of Prices",
-       y = "Density",
+       y = "Frequency",
   x = "Prices", color = "Legend") +
   theme_minimal()
 
@@ -474,7 +477,7 @@ ggplot(prices) +
   geom_vline(aes(xintercept = boostrap_estimated_mean_corrected),
              color = "orange") +
   labs(title = "Histrogram of Prices",
-       y = "Density",
+       y = "Frequency",
   x = "Prices", color = "Legend") +
   theme_minimal()
 
@@ -510,7 +513,7 @@ ggplot(prices) +
   geom_vline(aes(xintercept = boostrap_estimated_mean_corrected),
              color = "orange") +
   labs(title = "Histrogram of Prices",
-       y = "Density",
+       y = "Frequency",
   x = "Prices", color = "Legend") +
   theme_minimal()
 
