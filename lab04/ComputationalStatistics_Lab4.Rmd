@@ -5,15 +5,15 @@ date: "`r Sys.Date()`"
 header-includes:
    - \usepackage{xcolor}
 output:
+  pdf_document:
+    number_sections: yes
+    toc: yes
+    toc_depth: 3
   html_document:
     df_print: paged
     number_sections: no
     toc: yes
     toc_float: no
-  pdf_document:
-    number_sections: yes
-    toc: yes
-    toc_depth: 3
   word_document:
     toc: yes
     toc_depth: '3'
@@ -171,7 +171,7 @@ ggplot(plotdf) +
 
 ```
 
-The following plot shows `10.000` samples with $x_0 = 5$ as a starting point and burn-in iterations set to `100`.
+The following plot shows `10.000` samples with $x_0 = 40$ as a starting point and burn-in iterations set to `10`.
 
 ```{r, echo = FALSE, warning = FALSE}
 
@@ -212,7 +212,7 @@ ggplot(plotdf) +
 
 ```
 
-Again you can see  `10.000` samples with $x_0 = 5$ as a starting point and burn-in iterations set to `75`.
+Again you can see  `10.000` samples with $x_0 = 500$ as a starting point and burn-in iterations set to `75`.
 
 ```{r, echo = FALSE, warning = FALSE}
 
