@@ -381,7 +381,7 @@ $$E[\mathcal{L}(\lambda|Y,Z) ] = -n * ln(2\lambda^2) + 2 \sum_{i=1}^{n}ln(X_i) -
 
 And finally we get:
 
-$$Q(\lambda,\lambda^k) = E[\mathcal{L}(\lambda|Y,Z) ] = -n * ln(2\lambda^2) + 2 \sum_{i=1}^{n}ln(X_i) - \sum_{i=1}^{n} \frac{X_iY_i}{\lambda} - \sum_{i=1}^{\beta} \frac{X_iZ_i}{2\lambda} - (n - \beta\frac{\lambda_k}{\lambda})$$
+$$Q(\lambda,\lambda^k) = E[\mathcal{L}(\lambda|Y,Z) ] = -n * ln(2\lambda^2) + 2 \sum_{i=1}^{n}ln(X_i) - \sum_{i=1}^{n} \frac{X_iY_i}{\lambda} - \sum_{i=1}^{\beta} \frac{X_iZ_i}{2\lambda} - (n - \beta)\frac{\lambda_k}{\lambda}$$
 
 **M-Step Calculation:**
 
