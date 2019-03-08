@@ -259,7 +259,7 @@ The calculate the power we need to count how often we failed to reject $H_0$ as 
 
 ```
 
-We see that for $\alpha$s around $1.0$ we fail to reject the $H_0$ hypothesis. As this is a two-sided test we expect some values where we fail to reject $H_0$ which we can observe here.
+We see that we reject $H_0$ in all cases.
 
 # Question 2: Bootstrap, Jackknife and Confidence Intervals
 
