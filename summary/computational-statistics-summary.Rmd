@@ -1,0 +1,449 @@
+---
+title: "Computational Statistics Summary"
+author: "Maximilian Pfundstein"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    df_print: paged
+    toc: true
+    toc_float: true
+    number_sections: true
+  pdf_document:
+    toc: true
+    toc_depth: 3
+    number_sections: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, cache = TRUE, include = TRUE, eval = FALSE,
+                      fig.pos = 'H')
+```
+
+# Handeling Computational Errors
+
+```{r}
+x1 = 1/3
+x2 = 1/4
+
+if (all.equal(x1-x2, 1/12)) {
+  print("Substraction is correct.")
+} else {
+  print("Substraction is wrong.")
+}
+```
+
+# Difference Quotient
+
+$$ f'(x) = \frac{f(x + \epsilon) - f(x)}{\epsilon}$$
+
+```{r}
+f_prime = function(x, epsilon = 10^(-5))  {
+  return( (f(x + epsilon) - f(x)) / epsilon)
+}
+```
+
+# Variance Estimators
+
+Krzysztof:
+
+$$\text{Var}(\vec{x}) = \frac{1}{n - 1} \left( \sum_{i=1}^{n} x_i^2 - \frac{1}{n} \left( \sum_{i=1}^{n} x_i \right)^2 \right)$$
+
+```{r}
+myvar = function(x) return(1/(length(x)-1) * (sum(x^2) - (sum(x)^2)/length(x)))
+```
+
+
+My:
+
+$$s = \frac{\sum_{i=1}^{n}(x_i-\overline{x})^2}{n-1}$$
+
+```{r}
+custom_variance = function(x) {
+  diff_mean = x - mean(x)
+  return(sum(diff_mean^2 / (length(x) - 1)))
+}
+```
+
+# Optimization
+
+## `optimize()`
+
+```{r}
+myMSE = function(lambda, pars) {
+  model = loess(Y ~ X, data=pars, enp.target = lambda)
+  prediction = predict(model, newdata = pars$Xtest)
+  mse = sum((prediction - pars$Ytest)^2)/length(pars$Ytest)
+  return(mse)
+}
+
+# parameters for the myMSE function ----------------------
+pars = list(X = train$Day, Y = train$LMR, Xtest = test$Day, Ytest = test$LMR)
+lambdas = seq(from = 0.1, to = 40, by = 0.1)
+# applying the myMSE function to all lambdas ------------
+mses = sapply(X = lambdas, FUN = myMSE, pars = pars)
+
+o = optimize(myMSE, tol = 0.01, interval = c(0.1, 40), pars = pars)
+o$minimum
+o$objective
+```
+
+Plotting a function with a minimum:
+
+```{r}
+lambdas[which.min(mses)]
+length(lambdas)
+
+df = data.frame(lambdas, mses)
+
+ggplot(df) +
+  geom_line(aes(x = lambdas, y = mses), color = "#C70039") +
+  geom_point(aes(x = seq(0.1, 40, by = 0.1)[which.min(mses)],
+  y = mses[which.min(mses)], color = "min MSE"),
+  colour = "blue") +
+  labs(title = "Lambdas VS MSEs", y = "MSE", x = "Lambda") +
+  theme_minimal()
+```
+
+## `optim()`
+
+General usage:
+
+```{r}
+optim(35, myMSE, method = "BFGS", pars = pars, control = list(fnscale = 1))
+```
+
+For optimizing likelihood:
+
+```{r}
+# c(mu, sigma)
+neg_llik_norm = function(par) {
+  n = nrow(as.matrix(data))
+  p1 = (n/2)*log(2*pi)
+  p2 = (n/2)*log(par[2]^2)
+  sum = sum((data - par[1])^2)
+  p3 = 1/(2*par[2]^2) * sum
+  return(p1+p2+p3)
+}
+
+# c(mu, sigma)
+neg_llik_norm_prime = function(par) {
+  n = nrow(as.matrix(data))
+  mu_prime = -1/(n*par[2]^2) * sum(data-par[1])
+  sigma_prime = 1/(2*par[2]^2) * (n - (1/(par[2]^2)) * sum((data-par[1])^2))
+  
+  return(c(mu_prime, sigma_prime))
+}
+
+optim(c(0, 1), neg_llik_norm, method = "CG")
+optim(c(0, 1), neg_llik_norm, method = "CG", gr = neg_llik_norm_prime)
+optim(c(0, 1), neg_llik_norm, method = "BFGS")
+optim(c(0, 1), neg_llik_norm, method = "BFGS", gr = neg_llik_norm_prime)
+```
+
+**Answer:** The negative log-likelihood function for the normal distribution is defined by:
+
+$$\mathcal{L}(\mu, \sigma^2, x_1,...,x_{100}) = \frac{n}{2}ln(2\pi) + \frac{n}{2}ln(\sigma^2) + \frac{1}{2\sigma^2}\sum_{j=1}^{n}(x_j-\mu)^2$$
+
+The estimators are:
+
+$$\hat\mu_n=\frac{1}{n}\sum_{j=1}^{n}x_j$$
+
+and
+
+$$\hat\sigma_n^2=\frac{1}{n}\sum_{j=1}^{n}(x_j-\hat\mu)^2$$
+
+**Answer:** The partial derivates for the negative log-likelihood are given by:
+
+$$\frac{\partial\mathcal{L}(\mu, \sigma^2, x_1,...,x_{100})}{\partial\mu} = -\frac{1}{n \sigma^2}\sum_{j=1}^n(x_j-\mu)$$
+
+$$\frac{\partial\mathcal{L}(\mu, \sigma^2, x_1,...,x_{100})}{\partial\sigma^2} = \frac{1}{2\sigma^2}\left( n-\frac{1}{\sigma^2}\sum_{j=1}^n(x_j-\mu)^2\right)$$
+
+# Sampling Based on Size
+
+**Task:** Use a uniform random number generator to create a function that selects 1 city from the whole list by the probability scheme offered above (do not use standard sampling functions present in R).
+
+```{r}
+get_city_by_urn_wo = function(city_pool) {
+  
+  # We take the cumulative sum and then runif from 1 to max(cumulative sum).
+  # This way we respect the proportions. As we need every intermediate result,
+  # we use a loop
+  cumulative_pop_sum = 0
+  
+  for (i in 1:nrow(city_pool)) {
+    cumulative_pop_sum = cumulative_pop_sum + city_pool$Population[i]
+    city_pool$CumSum[i] = cumulative_pop_sum
+  }
+  
+  # Now we get a random value between 1 to max(cumulative sum). As larger muni-
+  # cipalities have larger ranges, this works as expected
+  selection =
+    floor(runif(n = 1, min = 1, max = city_pool$CumSum[nrow(city_pool)]))
+  
+  # Return the first city which has a greater CumSum than the selection
+  return(city_pool[city_pool$CumSum > selection,][1, c(1, 2)])
+}
+
+```
+
+**Task:** Use the function you have created in step 2 as follows:
+
+a. Apply it to the list of all cities and select one city
+b. Remove this city from the list
+c. Apply this function again to the updated list of the cities 
+d. Remove this city from the list 
+e. ... and so on until you get exactly 20 cities.
+
+**Answer:** We will combine all of these steps in one function. We're lazy.
+
+```{r}
+
+get_n_cities = function(data, n) {
+  
+  # Create a copy to not touch the original data.
+  city_pool = data
+  selected_cities = data.frame()
+  
+  # As long as we don't have n samples, get one and remove it from the pool,
+  # as we sample without replacement
+  while(nrow(selected_cities) < n) {
+    selected_city = get_city_by_urn_wo(city_pool)
+    selected_cities = rbind(selected_cities, selected_city)
+    city_pool = city_pool[!rownames(city_pool) %in% rownames(selected_cities),]
+  }
+  
+  return(selected_cities)
+}
+
+sample = get_n_cities(data, 20)
+
+```
+
+# Inverse CDF Method
+
+The double exponential (Laplace) distribution is given by formula
+
+$$DE(\mu,\alpha) = \frac{\alpha}{2}e^{-\alpha|x-\mu|}$$
+
+**Task**: Write a code generating double exponential distribution $DE(0, 1)$ from $Unif(0, 1)$ by using the inverse CDF method. Explain how you obtained that code step by step. Generate `10000` random numbers from this distribution, plot the histogram and comment whether the result looks reasonable.
+
+1. Derive the CDF from the PDF (`dfunc()`)by taking the integral $\int_{-\infty}^{x} \text{CDF} dx$. This function is the `pfunc()` (CDF!, cumulative).
+2. Swap `x` and `y` to receive the quantile function `qfunc()`.
+3. Combine both functions to create the `rfunc()`.
+
+This can look like this:
+
+```{r}
+# double exponential (Laplace) distribution
+
+# PDF
+ddel = function(x = 1, mu = 0, b = 1) {
+return(1/(2*b) * exp(-abs(x-mu)/(b)))
+}
+
+# CDF
+pdel = function(x = 1, mu = 0, b = 1) {
+  return(1/2 + 1/2 * sgn(x-mu) * (1 - exp(-abs(x-mu)/b)))
+}
+
+# Quantile
+qdel = function(p, mu = 0, b = 1) {
+  if (p < 0 | p > 1) stop("p must be in range (0, 1)")
+  if (p <= 0.5) return(mu + b * log(2 * p))
+  return (mu - b * log(2 - 2 * p))
+}
+
+# Random
+rdel = function(n = 1, mu = 0, b = 1) {
+  quantiles = runif(n = n, min = 0, max = 1)
+  rdels = sapply(X = quantiles, FUN = qdel, mu = mu, b = b)
+  return(rdels)
+}
+```
+
+To look how the distribution looks like with different parameters, use the following code and plots:
+
+```{r}
+sample_rdel_0_1 = rdel(10000, mu = 0, b = 1)
+sample_rdel_0_2 = rdel(10000, mu = 0, b = 2)
+sample_rdel_0_4 = rdel(10000, mu = 0, b = 4)
+sample_rdel_m5_4 = rdel(10000, mu = -5, b = 4)
+
+df = data.frame(sample_rdel_0_1, sample_rdel_0_2,
+sample_rdel_0_4, sample_rdel_m5_4)
+
+p1 = ggplot(df) +
+  geom_histogram(aes(x = sample_rdel_0_1),
+  color = "#FFC300", fill = "#FFC300", binwidth = 0.01) +
+  xlim(-10, 10) +
+  ylim(0, 60) +
+  ggtitle("RD(0, 1)") +
+  theme_minimal()
+
+# p2, p3, p4
+
+grid.arrange(p1, p2, p3, p4, nrow = 2)
+
+```
+
+# Acceptance / Rejection Method
+
+For plotting the PDF and CDF to compare for instance two of them:
+
+```{r}
+sequence = seq(from = -10, to = 10, by = 0.01)
+
+dnorm_samples = sapply(X = sequence, FUN = dnorm)
+ddel_samples = sapply(X = sequence, FUN = ddel)
+pnorm_samples = sapply(X = sequence, FUN = pnorm)
+pdel_samples = sapply(X = sequence, FUN = pdel)
+
+df = data.frame(dnorm_samples, ddel_samples, pnorm_samples, pdel_samples)
+
+ggplot(df) +
+  geom_line(aes(x = sequence, y = dnorm_samples,
+                colour = "Normal Distribution (PDF)")) +
+  geom_line(aes(x = sequence, y = ddel_samples,
+                colour = "Double Exponential Distribution (PDF)")) +
+  labs(title = "dnorm() and ddel()", y = "Density",
+  x = "X", color = "Legend") +
+  scale_color_manual(values = c("#17202A", "#C70039")) +
+  theme_minimal()
+
+ggplot(df) +
+  geom_line(aes(x = sequence, y = pnorm_samples,
+                colour = "Normal Distribution (CDF)")) +
+  geom_line(aes(x = sequence, y = pdel_samples,
+                colour = "Double Exponential Distribution (CDF)")) +
+  labs(title = "pnorm() and pdel()", y = "Cumulative Density",
+  x = "X", color = "Legend") +
+  scale_color_manual(values = c("#17202A", "#C70039")) +
+  theme_minimal()
+```
+
+For calculating the `c` value, use this code:
+
+```{r}
+c = max(dnorm_samples / ddel_samples)
+```
+
+For creating nice plots, use this:
+
+```{r}
+df$scaled_envelop = c * df$ddel_samples
+
+ggplot(df) +
+  geom_line(aes(x = sequence, y = dnorm_samples,
+                colour = "Normal Distribution (PDF)")) +
+  geom_line(aes(x = sequence, y = ddel_samples,
+                colour = "Double Exponential Distribution (PDF)")) +
+  geom_line(aes(x = sequence, y = scaled_envelop,
+                colour = "Scaled Double Exponential Distribution (PDF)")) +
+  labs(title = "Envelope", y = "Density",
+  x = "X", color = "Legend") +
+  scale_color_manual(values = c("#17202A", "#C70039", "#581845")) +
+  theme_minimal()
+
+ggplot(df) +
+  geom_ribbon(aes(x = sequence, ymin = df$dnorm_samples, ymax = df$scaled_envelop),
+              alpha = 0.8, fill = "#C70039", color = "#C70039") +
+  geom_ribbon(aes(x = sequence, ymin = 0, ymax = df$dnorm_samples),
+              alpha = 0.8, fill = "#DAF7A6", color = "#DAF7A6") +
+  labs(title = "Acceptance and Rejection Regions", y = "Density",
+  x = "X", color = "Legend") +
+  scale_color_manual(values = c("#17202A", "#C70039", "#581845")) +
+  theme_minimal()
+```
+
+And for actually using it, use:
+
+```{r}
+rs = c()
+rs_rejected = c()
+
+while (length(rs) < 2000) {
+  # Take a random sample from our proposal (x-axis)
+  z = rdel(n = 1, mu = 0, b = 1)
+  
+  # Take a unform, thus a random y value
+  u = runif(n = 1, min = 0, max = c * ddel(z))
+  
+  # Check in which region this on lies
+  if (u <= dnorm(z)) {
+    rs = c(rs, z)
+  }
+  else {
+    rs_rejected = c(rs_rejected, z)
+  }
+}
+```
+
+Plot the drawn samples:
+
+```{r}
+df2 = as.data.frame(rs)
+
+ggplot(df2) +
+  geom_histogram(aes(x = rs),
+                 color = "#C70039", fill = "#C70039", binwidth = 0.01) +
+  xlim(-5, 5) + 
+  ylim(0, 30) +
+  ggtitle("N(0, 1) sampled from DE(0, 1)") +
+  theme_minimal()
+```
+
+Expected rejection rate:
+
+```{r}
+1 - 1/c
+
+```
+
+Observed rejection rate:
+
+```{r}
+length(rs_rejected) / (length(rs)+length(rs_rejected))
+```
+
+# Metropolis-Hastings Algorithm
+
+We have given a target function (probably only a proportional one).
+
+```{r}
+# Target function with original scaling
+f = function(x) {
+  return(120 * x^5 * exp(-x))
+}
+
+# Target function
+df = function(x) {
+  x = ifelse(x <= 0, 0.000001, x)
+  return(x^5 * exp(-x))
+}
+
+sequence = seq(from = 0.01, to = 20, by = 0.01)
+
+real_f = f(sequence)
+plotdf = data.frame(sequence, real_f)
+
+ggplot(plotdf) +
+  geom_line(aes(x = sequence, y = real_f), color = "#6091ec") +
+  labs(title = "Target Density Function", y = "Density",
+  x = "X", color = "Legend") +
+  theme_minimal()
+```
+
+
+# General Plots
+
+## Histrogram
+
+General rool for `n` datapoints: $\sqrt{n}$ bars.
+
+```{r}
+ggplot(sample)+
+  geom_histogram(aes(x = Population), bins = nrow(sample), color = "black", fill = "#C70039") +
+  ggtitle("Histogram of selected cities")
+```
+
+
