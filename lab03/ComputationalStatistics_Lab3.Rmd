@@ -398,7 +398,7 @@ while (length(rs) < 2000) {
   # Take a random sample from our proposal (x-axis)
   z = rdel(n = 1, mu = 0, b = 1)
   
-  # Take a unform, thus a random y value
+  # Take a uniform, thus a random y value
   u = runif(n = 1, min = 0, max = c * ddel(z))
   
   # Check in which region this on lies
