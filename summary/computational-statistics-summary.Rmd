@@ -3,14 +3,14 @@ title: "Computational Statistics Summary"
 author: "Maximilian Pfundstein"
 date: "`r Sys.Date()`"
 output:
+  pdf_document:
+    toc: true
+    toc_depth: 3
+    number_sections: true
   html_document:
     df_print: paged
     toc: true
     toc_float: true
-    number_sections: true
-  pdf_document:
-    toc: true
-    toc_depth: 3
     number_sections: true
 ---
 
@@ -433,6 +433,316 @@ ggplot(plotdf) +
   theme_minimal()
 ```
 
+The Metropolis-Hastings algorthm is implemented by:
+
+```{r}
+#' Metropolis Hasting Algorithm
+#'
+#' @param n Number of samples from the target distribution.
+#' @param x_0 Initial state from Pi.
+#' @param b Burn-in steps to remove from samples.
+#' @param proposal Selects the proposal function.
+#' @param keep_burnin Decides if to keep the samples during the burn-in period. #'
+#' @return Returns a list containing samples.
+#' @export
+#'
+#' @examples
+metropolis_hastings = function(n = 1, x_0 = 1, b = 50, proposal = "lnorm",
+                                keep_burnin = FALSE) {
+
+  # Vectors to store the samples in
+  samples = c()
+  
+  # Samples from proposel from the random walk (MC)
+  xt = x_0
+  xt_1 = x_0
+  
+  while (length(samples) < n)  {
+    
+    # Generate proposal state
+    if (proposal == "lnorm") {
+      x_star = rlnorm(n = 1, meanlog = log(xt), sdlog = 1)
+        
+      # Calculate correction factor C
+      c = dlnorm(xt_1, meanlog = log(xt), sdlog = 1) /
+      dlnorm(x_star, meanlog = log(xt), sdlog = 1)
+    }
+    else if (proposal == "chisquared") {
+      x_star = rchisq(n = 1, df = floor(xt + 1))
+      
+      # Calculate correction factor C
+      c = dchisq(x = xt_1, df = floor(xt + 1)) /
+      dchisq(x_star, df = floor(xt + 1)) }
+    else {
+      stop("Invalid proposal.")
+    }
+    
+    # Calculate acceptance probability alpha
+    if (df(xt_1) <= 0) {
+      # We need this to avoid troublesome areas where the density is so low that
+      # it's 0 from a computiationally point of view.
+      alpha = 0
+    }
+    else {
+      alpha = min(1, df(x_star)/df(xt_1) * c)
+    }
+    
+    # Generate u from uniform
+    u = runif(n = 1, min = 0, max = 1)
+    
+    # Decide if to accept or reject the proposal
+    if (u <= alpha) { # Accept
+      xt_1 = xt
+      xt = x_star
+      samples = c(samples, x_star)
+    }
+    else {
+      # Reject
+      xt = xt_1
+      }
+  }
+  
+  # Return samples
+  if (keep_burnin) return(samples) {
+    return(samples[b+1:length(samples)])
+  }
+}
+```
+
+Create a fancy plot of the burn-in period using:
+
+```{r}
+burnin = 10
+
+results = metropolis_hastings(100, x_0 = 40, b = burnin, proposal = "lnorm",
+                             keep_burnin = TRUE)
+
+plotdf = data.frame(index = 1:length(results), values = results)
+
+ggplot(plotdf) +
+  geom_line(aes(x = index, y = values), color = "#6091ec") +
+  labs(title = "Traceplot For The Burn-In Period (burnin = 10)", y = "X*",
+  x = "Iteration", color = "Legend") +
+  geom_vline(xintercept = burnin, color = "#C70039") + 
+  theme_minimal()
+```
+
+And to plot the distribution of the samples, use:
+
+```{r}
+results_lnorm = metropolis_hastings(10000, x_0 = 5, b = 100, proposal = "lnorm")
+
+plotdf = data.frame(results_lnorm)
+
+ggplot(plotdf) +
+  geom_histogram(aes(x = results_lnorm),
+                 color = "#000000", fill = "#C70039",
+                 bins = length(results_lnorm)/100) +
+  labs(title = "Samples From Target Function Using Normal Proposal",
+       y = "Density",
+  x = "X", color = "Legend") +
+  theme_minimal()
+```
+
+# Gelman-Rubin Factor
+
+The custom implementation looks like this:
+
+```{r}
+gelman_rubin_factor = function(sequence_matrix) {
+  
+  k = nrow(sequence_matrix)
+  n = ncol(sequence_matrix)
+  
+  B = n/(k-1) * sum((rowMeans(sequence_matrix) - mean(sequence_matrix))^2)
+  S_squared = rowSums((sequence_matrix - rowMeans(sequence_matrix))^2 / (n - 1))
+  W = sum(S_squared / k)
+  V = ((n - 1) / n * W) + (1/n * B)
+  R = sqrt(V / W)
+  return(R)
+}
+
+```
+
+And calling it with the previously defined Metropolis-Hastings algorithm, use:
+
+```{r}
+k = 10 # row
+n = 1000 # col
+
+sequence_matrix = matrix(NaN, nrow = k, ncol = n)
+
+for (i in 1:k) {
+  sequence_matrix[i,] = metropolis_hastings(n, x_0 = i, b = 0,
+                                   proposal = "chisquared", keep_burnin = TRUE)
+}
+
+print(gelman_rubin_factor(sequence_matrix))
+
+k = 10 # row
+n = 5 # col
+
+sequence_matrix = matrix(NaN, nrow = k, ncol = n)
+
+for (i in 1:k) {
+  sequence_matrix[i,] = metropolis_hastings(n, x_0 = i, b = 0,
+                                   proposal = "chisquared", keep_burnin = TRUE)
+}
+
+print(gelman_rubin_factor(sequence_matrix))
+```
+
+There is also a built-in implementation which can be invoked with the following code:
+
+```{r}
+library(coda)
+
+results5 = list()
+results10 = list()
+results50 = list()
+k = 10
+
+for (i in 1:k) {
+  results5[[i]] = mcmc(metropolis_hastings(5, x_0 = i, b = 0,
+                                   proposal = "chisquared", keep_burnin = TRUE))
+}
+
+for (i in 1:k) {
+  results10[[i]] = mcmc(metropolis_hastings(10, x_0 = i, b = 0,
+                                   proposal = "chisquared", keep_burnin = TRUE))
+}
+
+for (i in 1:k) {
+  results50[[i]] = mcmc(metropolis_hastings(50, x_0 = i, b = 0,
+                                   proposal = "chisquared", keep_burnin = TRUE))
+}
+
+mcmc_list5 = mcmc.list(results5)
+gelman.diag(mcmc_list5)
+
+mcmc_list10 = mcmc.list(results10)
+gelman.diag(mcmc_list10)
+
+mcmc_list50 = mcmc.list(results50)
+gelman.diag(mcmc_list50)
+```
+
+# Integral Estimation
+
+Let's say we want to integrate the following integral:
+
+$$\int_{0}^{\infty} x f(x)dx$$
+
+**Answer:** To estimate this integral we take our previous samples. We then calculate:
+
+$$\int_{0}^{\infty} x f(x)dx = E[x_{}] \sim \frac{1}{n}\sum_{i=1}^{n} x_i$$
+where $x_i$ are our samples. As the decomposed left-side function is just $x$, this is all we have to do. The limits are given by the proposing function.
+
+Using the different defined proposals we can use the follwing code for the estimation:
+
+```{r}
+
+valid_samples_lnorm = results_lnorm[!is.na(results_lnorm)]
+sum(valid_samples_lnorm) / length(valid_samples_lnorm)
+
+```
+
+```{r}
+
+valid_samples_chisquared = results_chisquared[!is.na(results_chisquared)]
+sum(valid_samples_chisquared) / length(valid_samples_chisquared)
+
+```
+
+These, of course, do not include the proportional factor.
+
+# Gibbs Sampling
+
+For Gibbs Sampling it is mandatory to find the Marginals. For doing that, do the following:
+
+- First write down the prior and the likelihood. The is no general way for this, it depends on the problem.
+- Then write down the posterior which is the product of both.
+- For finding the marginals, drop every factor that is not dependend on the marginal variable.
+
+If we have to combine two normal distributions, it can be done using the following rules:
+
+The product of two normal distributions is given by (see https://www.johndcook.com/blog/2012/10/29/product-of-normal-pdfs/ as a recap if not present):
+
+$$\sigma_{new}^{2} = \frac{\sigma_{1}^{2}\sigma_{2}^{2}}{\sigma_{1}^{2} + \sigma_{2}^{2}}$$
+
+$$\mu_{new} = \frac{\sigma_{1}^{-2}\mu_1 + \sigma_{2}^{-2}\mu_2}{\sigma_{1}^{-2} + \sigma_{2}^{-2}}$$
+
+For implementing the Gibbs Sampler we write one function for getting the marginals and one main function for doing the actual sampling.
+
+```{r}
+
+get_mu = function(i, sigma = 0.2, mu, Y) {
+  
+  if (i == 1) {
+    # First Marginal
+    return(rnorm(n = 1, mean = (mu[2] + Y[1])/2, sd = sqrt(1/2 * sigma)))
+  }
+  else if (i == 50) {
+    # Last Marginal
+    return(rnorm(n = 1, mean = (2 * mu[i-1] - Y[i-1] + 2 * Y[i])/3,
+                 sd = sqrt(2/3 * sigma)))
+  }
+  
+  # General Marginals
+    return(rnorm(n = 1, mean = (2 * mu[i-1] + 2 * mu[i+1] + 2 * Y[i] - Y[i-1])/5,
+                 sd = sqrt(2/5 * sigma)))
+}
+
+gibbs_sample = function(n, Y, include_matrix = FALSE) {
+  
+  # Vectors to store the samples in
+  mu_matrix = matrix(0, ncol = length(Y), nrow = n)
+  mu = rep(0, length(Y))
+  
+  for(j in 1:n) {
+    for (i in 1:length(Y)) {
+      mu[i] = get_mu(i, sigma = 0.2, mu = mu, Y = Y)
+    }
+    mu_matrix[j,] = mu
+  }
+  
+  if (include_matrix) {
+    return(list(means = colMeans(mu_matrix), matrix = mu_matrix))
+  }
+  
+  return(colMeans(mu_matrix))
+}
+
+```
+
+Then this function can be used like this. This also includes a plot of the random walk.
+
+```{r}
+gibbs_sample_result = gibbs_sample(1000, Y, TRUE)
+
+data$gibbs_samples = gibbs_sample_result$means
+
+ggplot(data) +
+  geom_line(aes(x = X, y = Y), color = "#C70039") +
+  geom_line(aes(x = X, y = gibbs_samples), color = "#581845") +
+  labs(title = "Dependence from Concentration on Day of Measurement", y =
+         "Concentration",  x = "Day of Measurement", color = "Legend") +
+  theme_minimal()
+```
+
+If a trace plot is needed, use this:
+
+```{r}
+df = data.frame(
+  iteration = seq(from = 1, to = length(gibbs_sample_result$matrix[,50]), by = 1),
+  mu_n = gibbs_sample_result$matrix[,50])
+
+ggplot(df) +
+  geom_line(aes(x = iteration, y = mu_n), color = "#C70039") +
+  labs(title = "Trace of mu_n", y = "Value of mu_n",  x = "Iteration",
+       color = "Legend") +
+  theme_minimal()
+```
 
 # General Plots
 
@@ -442,8 +752,52 @@ General rool for `n` datapoints: $\sqrt{n}$ bars.
 
 ```{r}
 ggplot(sample)+
-  geom_histogram(aes(x = Population), bins = nrow(sample), color = "black", fill = "#C70039") +
+  geom_histogram(aes(x = Population), bins = nrow(sample), color = "black",
+                 fill = "#C70039") +
   ggtitle("Histogram of selected cities")
+```
+
+## Simple X/Y Plot
+
+```{r}
+ggplot(data) +
+  geom_line(aes(x = X, y = Y), color = "#c70039") +
+  labs(title = "Dependence from Concentration on Day of Measurement",
+       y = "Concentration",  x = "Day of Measurement", color = "Legend") +
+  theme_minimal()
+```
+
+## Variance Plot
+
+```{r}
+for (i in 1:length(v)) {
+  Xi = v[1:i]
+  X$vec_customvar[[i]] = custom_variance(as.vector(Xi))
+}
+
+ggplot(X[2:nrow(X),]) +
+  geom_point(aes(x = index, y = value, colour = "Difference")) +
+  geom_point(aes(x = index, y = vec_myvar,  colour = "my_var()")) +
+  geom_point(aes(x = index, y = vec_var, colour = "var()")) +
+  geom_point(aes(x = index, y = vec_customvar, colour = "custom_variance()")) +
+  labs(title = "Difference in Variance", y = "Variance",
+  x = "Sequence", color = "Legend") +
+  scale_color_manual(values = c("#17202A", "#C70039", "#407AFF", "#FFC300")) +
+  scale_x_log10() + 
+  theme_minimal()
+```
+
+## Scatterplot With Geom Smoother
+
+```{r}
+ggplot(lottery) +
+  geom_point(aes(x = Day_of_year, y = Draft_No), color = "black",
+             fill = "#dedede", shape = 21) +
+  geom_smooth(mapping = aes(x = Day_of_year, y = Draft_No),
+              method = "loess", size = 1.5, color = "#000000") +
+  labs(title = "Day of Year VS Draft Number",
+       y = "Draft Number",  x = "Day of Year", color = "Legend") +
+  theme_minimal()
 ```
 
 
