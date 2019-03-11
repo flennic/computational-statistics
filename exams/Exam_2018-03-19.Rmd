@@ -1,0 +1,236 @@
+---
+title: "Exam 2018-03-19"
+author: "Maximilian Pfundstein"
+date: "`r Sys.Date()`"
+output:
+  pdf_document:
+    toc: true
+    toc_depth: 3
+    number_sections: true
+  html_document:
+    df_print: paged
+    toc: true
+    toc_float: true
+    number_sections: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(ggplot2)
+```
+
+# Assignment 1
+
+# Assignment 2
+
+```{r}
+f = function(x) {
+  
+  #if (x < -1 | x > 2) stop("Function only defined for [-1, 2].")
+  
+  return(-x * sin(10 * pi * x) + 1) 
+}
+```
+
+```{r}
+sequence = seq(from = -1, to = 2, by = 0.001)
+f.sequence = f(sequence)
+
+df = data.frame(sequence, f.sequence)
+
+ggplot(df) + geom_line(aes(x = sequence, y = f.sequence), color = "#C70039") + 
+  labs(title = "f(x)", y = "f(x)", x = "x") + theme_minimal()
+```
+
+## Question 2.1 (2 points)
+
+```{r}
+
+to_base_10 = function(v) {
+  return(Reduce(function(s,r) {s*2+r}, v))
+}
+
+transform_to_interval = function(u, a = -1, b = 2, m = 15) {
+  return(a + u * ((b - a)/(2^m - 1)))
+}
+
+chrom_to_x = function(chromosome) {
+  return(transform_to_interval(to_base_10(chromosome)))
+}
+
+chrom_to_value = function(chromosome) {
+  return(f(transform_to_interval(to_base_10(chromosome))))
+}
+
+chrom_to_value(c(1, 0, 1))
+
+```
+
+## Question 2.2
+
+```{r}
+  
+generate_population = function(n, m = 15) {
+  
+  population = data.frame()
+  
+   for (i in 1:n) {
+     individual = c(i, ifelse(round(rnorm(m, mean = 0, sd = 1)) > 0, 1, 0))
+     population = rbind(population, individual)
+   }
+  
+  colnames(population) = c("index", as.character(seq(from = 1, to = m, by = 1)))
+  return(population)
+}
+
+tournament_selection = function(population) {
+  
+  # Select fighting partners / groups
+  fighters = sample(1:nrow(population), 4)
+  
+  # Get their values
+  fighter_A = population[fighters[1],]
+  fighter_B = population[fighters[2],]
+  fighter_C = population[fighters[3],]
+  fighter_D = population[fighters[4],]
+  
+  # Let them fight, group A
+  if (chrom_to_value(fighter_A[2:length(fighter_A)]) <
+      chrom_to_value(fighter_A[2:length(fighter_A)])) {
+    winner_group_A = fighter_A
+    looser_group_A = fighter_B
+  }
+  else {
+    winner_group_A = fighter_B
+    looser_group_A = fighter_A
+  }
+  
+  # Let them fight, group B
+  if (chrom_to_value(fighter_A[2:length(fighter_C)]) <
+      chrom_to_value(fighter_A[2:length(fighter_D)])) {
+    winner_group_B = fighter_C
+    looser_group_B = fighter_D
+  }
+  else {
+    winner_group_B = fighter_D
+    looser_group_B = fighter_C
+  }
+  
+  # Return them, first two are winners, last two are looser
+  results = data.frame()
+  results = rbind(results, winner_group_A)
+  results = rbind(results, winner_group_B)
+  results = rbind(results, looser_group_A)
+  results = rbind(results, looser_group_B)
+  
+  return(results)
+}
+
+crossover = function(chrom_A, chrom_B) {
+  chrom_A = unlist(chrom_A)
+  chrom_B = unlist(chrom_B)
+  
+  cut = round(length(chrom_A)/2)
+  
+  child_A = c(chrom_A[2:cut], chrom_B[(cut+1):length(chrom_B)])
+  child_B = c(chrom_B[2:cut], chrom_A[(cut+1):length(chrom_B)])
+  
+  return(list(child_A, child_B))
+}
+
+mutate_with_prob = function(x, prob) {
+  if (runif(n = 1) < prob) {
+    return(ifelse(x == 0, 1, 0))
+  }
+  else {
+    return(x)
+  }
+}
+
+mutate = function(chrom, prob = 0.05) {
+  chrom = unlist(chrom)
+  # To get an average of 0.05 bits mutated
+  digit_prob = prob / length(chrom)
+  chrom[2:length(chrom)] = sapply(chrom[2:length(chrom)], mutate_with_prob, prob)
+  return(chrom)
+}
+
+```
+
+```{r}
+
+get_best_individual = function(population) {
+  index_best = which.min(apply(population[,2:ncol(population)], 1, chrom_to_value))
+  return(population[index_best,])
+}
+
+genetic_algorithm = function(population_size = 55, mutprob = 0.05, runs = 100) {
+  
+  # Generate population
+  population = generate_population(population_size)
+  
+  best_individual = get_best_individual(population)
+  
+  for (i in 1:runs) {
+    
+    # Selection
+    fighters = tournament_selection(population)
+    
+    # Create children of winners
+    children = crossover(fighters[1,], fighters[2,])
+    
+    # Mutate the new individuals
+    children[[1]] = mutate(children[1], prob = mutprob)
+    children[[2]] = mutate(children[2], prob = mutprob)
+    
+    # Replace the loosers with the new winners
+    population[fighters[3,1], 2:ncol(population)] = children[[1]]
+    population[fighters[4,1], 2:ncol(population)] = children[[2]]
+    
+    # Save overall best individual
+    current_best = get_best_individual(population)
+    if (chrom_to_value(current_best) < chrom_to_value(best_individual)) {
+      best_indididual = current_best
+    }
+  }
+  
+  return(list(best = best_individual, population = population))
+}
+
+```
+
+```{r}
+results = genetic_algorithm(population_size = 55, mutprob = 0.5, runs = 100)
+
+print(results$best)
+print(chrom_to_value(results$best))
+```
+
+
+```{r}
+print(results$best)
+print(chrom_to_value(results$best))
+
+X = apply(results$population[,2:ncol(results$population)], 1, chrom_to_x)
+Y = f(X)
+
+X_best = chrom_to_x(results$best[2:length(results$best)])
+Y_best = f(X_best)
+
+population = data.frame(X, Y)
+best = data.frame(X_best, Y_best)
+
+ggplot(df) +
+  geom_line(aes(x = sequence, y = f.sequence), color = "#C70039") +
+  geom_point(aes(x = population$X, y = population$Y),
+             data = population, color = "black",fill = "#FFC300", shape = 21,
+             size = 2, stroke = 1) + 
+  geom_point(aes(x = best$X, y = best$Y), data = best, color = "black",
+             fill = "#7BA9FF", shape = 21, size = 2, stroke = 1) +
+  labs(title = "maxiter = 10, mutprob = 0.1", y = "f(x)", x = "x") +
+  theme_minimal()
+```
+
+
+
+
