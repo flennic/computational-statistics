@@ -662,7 +662,8 @@ metropolis_hastings = function(n = 1, x_0 = 1, b = 50, proposal = &quot;lnorm&qu
     
     # Calculate acceptance probability alpha
     if (df(xt_1) &lt;= 0) {
-      # We need this to avoid troublesome areas where the density is so low that       # it's 0 from a computiationally point of view.
+      # We need this to avoid troublesome areas where the density is so low that
+      # it's 0 from a computiationally point of view.
       alpha = 0
     }
     else {
@@ -858,7 +859,8 @@ data$gibbs_samples = gibbs_sample_result$means
 ggplot(data) +
   geom_line(aes(x = X, y = Y), color = &quot;#C70039&quot;) +
   geom_line(aes(x = X, y = gibbs_samples), color = &quot;#581845&quot;) +
-  labs(title = &quot;Dependence from Concentration on Day of Measurement&quot;, y = &quot;Concentration&quot;,  x = &quot;Day of Measurement&quot;, color = &quot;Legend&quot;) +
+  labs(title = &quot;Dependence from Concentration on Day of Measurement&quot;, y =
+         &quot;Concentration&quot;,  x = &quot;Day of Measurement&quot;, color = &quot;Legend&quot;) +
   theme_minimal()</code></pre>
 <p>If a trace plot is needed, use this:</p>
 <pre class="r"><code>df = data.frame(
@@ -871,21 +873,540 @@ ggplot(df) +
        color = &quot;Legend&quot;) +
   theme_minimal()</code></pre>
 </div>
-<div id="general-plots" class="section level1">
-<h1><span class="header-section-number">12</span> General Plots</h1>
+<div id="hypothesis-testing" class="section level1">
+<h1><span class="header-section-number">12</span> Hypothesis Testing</h1>
+<div id="defining-a-test-statistics" class="section level2">
+<h2><span class="header-section-number">12.1</span> Defining a Test-Statistics</h2>
+<p>Pay attention how <strong>exactly</strong> this on is defined, as here for instance <span class="math inline">\(Y\)</span> and <span class="math inline">\(\hat{Y}\)</span> mixed.</p>
+<p><span class="math display">\[T = \frac{\hat{Y}(X_{b})-\hat{Y}(X_{a})}{X_{b}-X_{a}}, \: \text{where } X_b = \text{argmax}_XY(X),X_a = \text{argmin}_XY(X)\]</span></p>
+<pre class="r"><code>data = data.frame(X = lottery$Day_of_year, Y = lottery$Draft_No)
+
+test_statistics = function(X, Y, Y_hat) {
+  
+  b_index = which.max(Y)
+  a_index = which.min(Y)
+  
+  return((Y_hat[b_index] - Y_hat[a_index]) / (X[b_index] - X[a_index]))
+}</code></pre>
+</div>
+<div id="non-parametric-bootstrap" class="section level2">
+<h2><span class="header-section-number">12.2</span> Non-Parametric Bootstrap</h2>
+<pre class="r"><code>f = function(data, ind) {
+  data1 = data[ind,]
+  model = loess(Draft_No ~ Day_of_year, data1)
+  
+  T_value =
+    test_statistics(data1$Day_of_year, data1$Draft_No, Y_hat = model$fitted)
+  
+  return(T_value)
+}
+
+# T(D) for the original data
+data$Y_hat = loess(Draft_No ~ Day_of_year, lottery)$fitted
+T_value_original = test_statistics(data$X, data$Y, data$Y_hat)
+
+# T for the bootstrapped samples
+nonparam_bootstrap =
+  boot(lottery, statistic = f, R = 2000, parallel = &quot;multicore&quot;)
+p_value_original = mean(nonparam_bootstrap$t &gt; 0)</code></pre>
+</div>
+<div id="density-of-non-parametric-t-values" class="section level2">
+<h2><span class="header-section-number">12.3</span> Density of non-parametric T-Values</h2>
+<pre class="r"><code>df = data.frame(nonparam_bootstrap$t)
+
+ggplot(df) +
+  geom_density(aes(x = nonparam_bootstrap.t), color = &quot;black&quot;,
+               fill = &quot;#dedede&quot;, alpha = 0.25) +
+  geom_vline(aes(xintercept = T_value_original), color = &quot;orange&quot;) +
+  labs(title = &quot;Density of non-parametric T-Values&quot;,
+       y = &quot;Density&quot;,  x = &quot;T-Value&quot;, color = &quot;Legend&quot;) +
+  theme_minimal()</code></pre>
+</div>
+<div id="defining-the-hypothesis-test-permutation-test" class="section level2">
+<h2><span class="header-section-number">12.4</span> Defining the Hypothesis Test (Permutation Test)</h2>
+<pre class="r"><code>test_hypothesis = function (data_input, statistics, B = 2000, T_org) {
+  
+  t_values = rep(NA, B)
+  
+  for (i in 1:B) {
+    
+    ind = sample(1:nrow(data_input))
+    data_input$X = data_input$X[ind]
+    
+    model = loess(Y ~ X, data_input)
+  
+    t_values[i] = statistics(data_input$X,
+                            data_input$Y, Y_hat = model$fitted)
+  }
+  
+  return(sum(abs(t_values) &gt;= abs(T_org))/B)
+}
+
+p_value_permutated = test_hypothesis(data, test_statistics, 2000, T_value_original)</code></pre>
+</div>
+<div id="crude-estimate-of-the-power" class="section level2">
+<h2><span class="header-section-number">12.5</span> Crude Estimate of the Power</h2>
+<p><strong>Question:</strong> Make a crude estimate of the power of the test constructed in Step 4:</p>
+<ol style="list-style-type: lower-alpha">
+<li>Generate (an obviously non-random) dataset with <span class="math inline">\(n = 366\)</span> observations by using same X as in the original data set and <span class="math inline">\(Y(x) = max(0,min(\alpha x + \beta,366))\)</span>, where <span class="math inline">\(\alpha = 0.1\)</span> and <span class="math inline">\(\beta \sim N(183,sd = 10)\)</span>.</li>
+<li>Plug these data into the permutation test with <span class="math inline">\(B = 200\)</span> and note whether it was rejected.</li>
+<li>Repeat Steps 5a-5b for <span class="math inline">\(\alpha = 0.2,0.3,...,10\)</span>.</li>
+</ol>
+<p>What can you say about the quality of your test statistics considering the value of the power?</p>
+<pre class="r"><code>simulate_data = function(X, Y_hat, hypothesis = test_hypothesis,
+                         statistics = test_statistics, alpha = 0.1,
+                         beta_mean = 183, beta_sd = 10, b = 200, limit = 366) {
+    
+  artificial = function(X, alpha) {
+    beta = rnorm(n = nrow(lottery), mean = beta_mean, sd = beta_sd)
+    return(max(0, min(alpha * X + beta, limit)))
+  }
+  
+  X_dataframe = X
+  Y_dateframe = sapply(X, artificial, alpha)
+  
+  Y_hat = loess(Y_dateframe ~ X_dataframe)$fitted
+  
+  Y_hat_dataframe = Y_hat
+  
+  data_artificial = data.frame(X_dataframe, Y_dateframe, Y_hat_dataframe)
+  colnames(data_artificial) = c(&quot;X&quot;, &quot;Y&quot;, &quot;Y_hat&quot;)
+  
+  T_val = test_statistics(data_artificial$X, data_artificial$Y, data_artificial$Y_hat)
+  
+  return(test_hypothesis(data_artificial, statistics, b, T_val))
+}
+
+alphas = seq(from = 0.1, to = 10.0, by = 0.1)
+
+no_cores = detectCores()
+cl = makeCluster(no_cores)
+
+clusterExport(cl, list(&quot;simulate_data&quot;, &quot;lottery&quot;, &quot;test_hypothesis&quot;,
+                       &quot;test_statistics&quot;, &quot;data&quot;))
+
+simulated_p_values =
+  parSapply(cl, alphas, FUN = function(alpha) {
+    simulate_data(alpha = alpha, X = lottery$Day_of_year, Y_hat = data$Y_hat)
+  })
+    
+stopCluster(cl)</code></pre>
+<p>Plot for p-values with respect to <span class="math inline">\(\alpha\)</span> and p-value line:</p>
+<pre class="r"><code>df = data.frame(alphas, simulated_p_values)
+
+ggplot(df)+
+  geom_point(aes(x = alphas, y = simulated_p_values), color = &quot;black&quot;,
+             fill = &quot;#dedede&quot;, shape = 21) +
+  geom_hline(aes(yintercept = 0.05), color = &quot;orange&quot;) +
+  labs(title = &quot;p-values depending on alpha&quot;,
+       y = &quot;p-value&quot;,  x = &quot;Alpha&quot;, color = &quot;Legend&quot;) +
+  theme_minimal()</code></pre>
+<p>Calculating the actual power is done by:</p>
+<pre class="r"><code>1 - mean(simulated_p_values &gt; 0.05)</code></pre>
+</div>
+</div>
+<div id="boostrap-with-bias-correction" class="section level1">
+<h1><span class="header-section-number">13</span> Boostrap with Bias-Correction</h1>
+<p>Doing a normal bootstrap.</p>
+<pre class="r"><code>f_prices = function(data, ind) {
+  data1 = data[ind,]
+  
+  return(mean(data1$Price))
+}
+
+house_bootstrap = boot(prices, statistic = f_prices, R = 2000,
+                       parallel = &quot;multicore&quot;)
+
+plot(house_bootstrap)</code></pre>
+<p>The estimate of the mean price is:</p>
+<pre class="r"><code>bootstrap_mean_price = mean(house_bootstrap$t)
+print(bootstrap_mean_price)</code></pre>
+<p>The bootstrap-bias-correction is given by the following values. The first one is the bias-correction and the second one is the bias corrected mean.</p>
+<pre class="r"><code>prices_mean = mean(prices$Price)
+print(prices_mean - bootstrap_mean_price)
+print(2 * prices_mean - bootstrap_mean_price)</code></pre>
+<p>The variance of the mean is given by:</p>
+<pre class="r"><code>bootstrap_variance_price = as.numeric(var(house_bootstrap$t))
+# bootstrap_mean_price = 1 / (B-1) * sum((house_bootstrap$t -
+#                                         mean(house_bootstrap$t))^2)
+
+print(bootstrap_variance_price)</code></pre>
+<p>Now we will create the 95% confidence intervals.</p>
+<pre class="r"><code>confidence_interval = boot.ci(house_bootstrap)
+print(confidence_interval)</code></pre>
+<p>As this output does not include the BCa, we will print the intervals manually. Note that the last to values in each row represent the confidence interval.</p>
+<pre class="r"><code>confidence_interval$percent
+confidence_interval$bca
+confidence_interval$normal</code></pre>
+</div>
+<div id="variance-estmation-using-jackknife" class="section level1">
+<h1><span class="header-section-number">14</span> Variance Estmation using Jackknife</h1>
+<pre class="r"><code>f_prices_jackknife = function(ind, data) {
+  data1 = data[-ind,]
+  return(mean(data1$Price))
+}
+
+# First create the statistics using jackknife
+n = length(prices$Price)
+
+indices = seq(from = 1, to = n, by = 1)
+jackknife_statistics = sapply(indices, f_prices_jackknife, prices)
+
+# For the variance estimate we will first calculate Ti_star
+Ti_star = sapply(jackknife_statistics, FUN = function(tdi, n, prices_mean) {
+  return(n * prices_mean - ((n - 1) * tdi))
+}, n = n, prices_mean = prices_mean)
+
+# Now we calculate J_T
+J_T = mean(Ti_star)
+
+# And now we can calculate the Variance
+variance_jackknife = 1 / (n * (n - 1)) * sum((Ti_star - J_T)^2)
+
+print(variance_jackknife)</code></pre>
+</div>
+<div id="confidence-intervals-with-respect-to-length-and-location" class="section level1">
+<h1><span class="header-section-number">15</span> Confidence Intervals with Respect to Length and Location</h1>
+<pre class="r"><code>boostrap_estimated_mean_corrected = (2 * prices_mean - bootstrap_mean_price)</code></pre>
+<p>The length of the CI is:</p>
+<pre class="r"><code>print(confidence_interval$percent[5] - confidence_interval$percent[4])</code></pre>
+<p>The mean is located the following “percent” of the CI range.</p>
+<pre class="r"><code>(boostrap_estimated_mean_corrected - confidence_interval$percent[4]) /
+  (confidence_interval$percent[5] - confidence_interval$percent[4]) * 100</code></pre>
+<pre class="r"><code>ggplot(prices) +
+  geom_histogram(aes(x = prices$Price),
+                 color = &quot;#000000&quot;, fill = &quot;#dedede&quot;) +
+  annotate(&quot;rect&quot;, xmin=confidence_interval$percent[4],
+           xmax=confidence_interval$percent[5], ymin=0, ymax=Inf,
+           alpha=0.5, fill=&quot;#86b4ff&quot;) +
+  geom_vline(aes(xintercept = boostrap_estimated_mean_corrected),
+             color = &quot;orange&quot;) +
+  labs(title = &quot;Histrogram of Prices&quot;,
+       y = &quot;Frequency&quot;,
+  x = &quot;Prices&quot;, color = &quot;Legend&quot;) +
+  theme_minimal()</code></pre>
+</div>
+<div id="genetic-algorithms" class="section level1">
+<h1><span class="header-section-number">16</span> Genetic Algorithms</h1>
+<p>First define the function to minimize or maximize.</p>
+<pre class="r"><code>f = function(x) {
+  left = x^2/exp(x)
+  exponent = (-9*sin(x))/(x^2+x+1)
+  right = 2*exp(exponent)
+  return(left-right)
+}</code></pre>
+<p>Plotting this function:</p>
+<pre class="r"><code>sequence = seq(from = 0, to = 30, by = 0.1)
+f.sequence = f(sequence)
+df = data.frame(sequence, f.sequence)
+
+ggplot(df) +
+  geom_line(aes(x = sequence, y = f.sequence), color = &quot;#C70039&quot;) +
+  labs(title = &quot;f(x)&quot;, y = &quot;f(x)&quot;, x = &quot;x&quot;) +
+  theme_minimal()</code></pre>
+<p>Max value at <code>x</code>.</p>
+<pre class="r"><code>print(sequence[which.max(f.sequence)])</code></pre>
+<p>And <code>y</code> or respect <code>f(x)</code> for that:</p>
+<pre class="r"><code>print(max(f.sequence))</code></pre>
+<p>Then the crossover function, might be different though.</p>
+<pre class="r"><code>crossover = function(x, y) return((x+y)/2)</code></pre>
+<p>Then the mutation.</p>
+<pre class="r"><code>mutate = function(x) return((x^2)%%30)</code></pre>
+<p>Initial Population.</p>
+<pre class="r"><code>X = seq(from = 0, to = 30, by = 5)</code></pre>
+<p>Corresponding values.</p>
+<pre class="r"><code>Values = f(X)</code></pre>
+<p>And then the algorithm itself. Keep in mind that this one <strong>does not save the overall best individual</strong>.</p>
+<pre class="r"><code>genetic = function(X, Values, maxiter = 100, mutprob = 0.05) {
+
+  best_individual = NaN
+  
+  for (i in 1:maxiter) {
+    
+    # 1)
+    parents = sample(1:length(X), size = 2)
+    
+    # 2) I don't know why we should order here!?
+    victim = which.min(Values)
+    
+    # 3)
+    child = crossover(X[parents][1], X[parents][2])
+    if (mutprob &gt; runif(n = 1, min = 0, max = 1)) {
+      child= (mutate(child))
+    }
+    
+    # 4)
+    X[victim] = child
+    Values[victim] = f(child)
+    
+    # 5)
+    best_index = which.max(Values)
+    best_individual = list(cx = X[best_index], cy = Values[best_index])
+  }
+  return(list(best = best_individual, population = X))
+}
+
+best_individual = genetic(X, Values, 100, 0.05)$best</code></pre>
+<p>Plot the best individual.</p>
+<pre class="r"><code>df = data.frame(sequence, f.sequence)
+best_individual = as.data.frame(best_individual)
+
+ggplot(df) +
+  geom_line(aes(x = sequence, y = f.sequence), color = &quot;#C70039&quot;) +
+  geom_point(aes(x = cx, y = cy ), data = best_individual, color = &quot;black&quot;,
+            fill = &quot;#7BA9FF&quot;, shape = 21, size = 3, stroke = 2) +
+  labs(title = &quot;f(x)&quot;, y = &quot;f(x)&quot;, x = &quot;x&quot;) +
+  theme_minimal()</code></pre>
+<p>Plot the initial distribution.</p>
+<pre class="r"><code>df = data.frame(sequence, f.sequence)
+initial.population = data.frame(X, Values)
+
+ggplot(df) +
+  geom_line(aes(x = sequence, y = f.sequence), color = &quot;#C70039&quot;) +
+  geom_point(aes(x = X, y = Values ), data = initial.population, color = &quot;black&quot;,
+            fill = &quot;#DAF7A6&quot;, shape = 21, size = 3, stroke = 2) +
+  labs(title = &quot;f(x)&quot;, y = &quot;f(x)&quot;, x = &quot;x&quot;) +
+  theme_minimal()</code></pre>
+<p>Six grid plot with different settings.</p>
+<pre class="r"><code>set.seed(12345)
+
+genetic1 = genetic(X, Values, 10, 0.1)
+genetic2 = genetic(X, Values, 10, 0.5)
+genetic3 = genetic(X, Values, 10, 0.9)
+genetic4 = genetic(X, Values, 100, 0.1)
+genetic5 = genetic(X, Values, 100, 0.5)
+genetic6 = genetic(X, Values, 100, 0.9)
+
+population1 = data.frame(genetic1$population, f(genetic1$population))
+best1 = as.data.frame(genetic1$best)
+
+population2 = data.frame(genetic2$population, f(genetic2$population))
+best2 = as.data.frame(genetic2$best)
+
+population3 = data.frame(genetic3$population, f(genetic3$population))
+best3 = as.data.frame(genetic3$best)
+
+population4 = data.frame(genetic4$population, f(genetic4$population))
+best4 = as.data.frame(genetic4$best)
+
+population5 = data.frame(genetic5$population, f(genetic5$population))
+best5 = as.data.frame(genetic5$best)
+
+population6 = data.frame(genetic6$population, f(genetic6$population))
+best6 = as.data.frame(genetic6$best)
+
+p1 = ggplot(df) +
+  geom_line(aes(x = sequence, y = f.sequence), color = &quot;#C70039&quot;) +
+  geom_point(aes(x = genetic1.population, y = f.genetic1.population.),
+             data = population1, color = &quot;black&quot;,
+            fill = &quot;#FFC300&quot;, shape = 21, size = 2, stroke = 1) +
+  geom_point(aes(x = cx, y = cy), data = best1, color = &quot;black&quot;,
+            fill = &quot;#7BA9FF&quot;, shape = 21, size = 2, stroke = 1) +
+  labs(title = &quot;maxiter = 10, mutprob = 0.1&quot;, y = &quot;f(x)&quot;, x = &quot;x&quot;) +
+  theme_minimal()
+
+p2 = ggplot(df) +
+  geom_line(aes(x = sequence, y = f.sequence), color = &quot;#C70039&quot;) +
+  geom_point(aes(x = genetic2.population, y = f.genetic2.population.),
+             data = population2, color = &quot;black&quot;,
+            fill = &quot;#FFC300&quot;, shape = 21, size = 2, stroke = 1) +
+  geom_point(aes(x = cx, y = cy), data = best2, color = &quot;black&quot;,
+            fill = &quot;#7BA9FF&quot;, shape = 21, size = 2, stroke = 1) +
+  labs(title = &quot;maxiter = 10, mutprob = 0.5&quot;, y = &quot;f(x)&quot;, x = &quot;x&quot;) +
+  theme_minimal()
+
+p3 = ggplot(df) +
+  geom_line(aes(x = sequence, y = f.sequence), color = &quot;#C70039&quot;) +
+  geom_point(aes(x = genetic3.population, y = f.genetic3.population.),
+             data = population3, color = &quot;black&quot;,
+            fill = &quot;#FFC300&quot;, shape = 21, size = 2, stroke = 1) +
+  geom_point(aes(x = cx, y = cy), data = best3, color = &quot;black&quot;,
+            fill = &quot;#7BA9FF&quot;, shape = 21, size = 2, stroke = 1) +
+  labs(title = &quot;maxiter = 10, mutprob = 0.9&quot;, y = &quot;f(x)&quot;, x = &quot;x&quot;) +
+  theme_minimal()
+
+p4 = ggplot(df) +
+  geom_line(aes(x = sequence, y = f.sequence), color = &quot;#C70039&quot;) +
+  geom_point(aes(x = genetic4.population, y = f.genetic4.population.),
+             data = population4, color = &quot;black&quot;,
+            fill = &quot;#FFC300&quot;, shape = 21, size = 2, stroke = 1) +
+  geom_point(aes(x = cx, y = cy), data = best4, color = &quot;black&quot;,
+            fill = &quot;#7BA9FF&quot;, shape = 21, size = 2, stroke = 1) +
+  labs(title = &quot;maxiter = 100, mutprob = 0.1&quot;, y = &quot;f(x)&quot;, x = &quot;x&quot;) +
+  theme_minimal()
+
+p5 = ggplot(df) +
+  geom_line(aes(x = sequence, y = f.sequence), color = &quot;#C70039&quot;) +
+  geom_point(aes(x = genetic5.population, y = f.genetic5.population.),
+             data = population5, color = &quot;black&quot;,
+            fill = &quot;#FFC300&quot;, shape = 21, size = 2, stroke = 1) +
+  geom_point(aes(x = cx, y = cy), data = best5, color = &quot;black&quot;,
+            fill = &quot;#7BA9FF&quot;, shape = 21, size = 2, stroke = 1) +
+  labs(title = &quot;maxiter = 100, mutprob = 0.5&quot;, y = &quot;f(x)&quot;, x = &quot;x&quot;) +
+  theme_minimal()
+
+p6 = ggplot(df) +
+  geom_line(aes(x = sequence, y = f.sequence), color = &quot;#C70039&quot;) +
+  geom_point(aes(x = genetic6.population, y = f.genetic6.population.),
+             data = population6, color = &quot;black&quot;,
+            fill = &quot;#FFC300&quot;, shape = 21, size = 2, stroke = 1) +
+  geom_point(aes(x = cx, y = cy), data = best6, color = &quot;black&quot;,
+            fill = &quot;#7BA9FF&quot;, shape = 21, size = 2, stroke = 1) +
+  labs(title = &quot;maxiter = 100, mutprob = 0.9&quot;, y = &quot;f(x)&quot;, x = &quot;x&quot;) +
+  theme_minimal()
+
+grid.arrange(p1, p2, p3, p4, p5, p6, nrow = 3)</code></pre>
+</div>
+<div id="expectation-maximization-algorithm-em" class="section level1">
+<h1><span class="header-section-number">17</span> Expectation-Maximization Algorithm (EM)</h1>
+<p>Plot for two lines in one graph.</p>
+<pre class="r"><code>ggplot(data) +
+  geom_line(aes(x = X, y = Z, color = &quot;Z&quot;)) +
+  geom_line(aes(x = X, y = Y, color = &quot;Y&quot;)) +
+  labs(title = &quot;Dependence of Z and Y versus X&quot;, y = &quot;Z/Y&quot;, x = &quot;X&quot;) +
+  scale_color_manual(values = c(&quot;#C70039&quot;, &quot;#581845&quot;)) +
+  theme_minimal()</code></pre>
+<p>In general, perform:</p>
+<ul>
+<li>E-Step (Expectation)</li>
+<li>M-Step (Maximazation)</li>
+</ul>
+<div id="expectation-step-e-step" class="section level2">
+<h2><span class="header-section-number">17.1</span> Expectation-Step (E-Step)</h2>
+<p>For the E-Step, we write down:</p>
+<p><span class="math display">\[Q(\theta,\theta^k) = E[\mathcal{L}(\theta|Y,Z)|\theta^k, Y]\]</span></p>
+<p>where <span class="math inline">\(\theta\)</span> is the unknown parameter (for instance <span class="math inline">\(\lambda\)</span>). Then we take the log likelihood and estimate the latent parameters, for instance by using the expected value. This depends on the distribution. The log likelihood is usually the log of the product of the given distributions.</p>
+<p>It could look like this:</p>
+<p><span class="math display">\[\mathcal{L}(\lambda|Y,Z) \sim ln\left(\prod_{i=1}^{n} \frac{X_i}{\lambda} e^{-X_i/\lambda}  * \frac{X_i}{2\lambda} e^{-X_i/2\lambda}\right)\]</span> And then taking the expected value for the missing variables.</p>
+<p><span class="math display">\[E[\mathcal{L}(\lambda|Y,Z) ] = -n * ln(2\lambda^2) + 2 \sum_{i=1}^{n}ln(X_i) - \sum_{i=1}^{n} \frac{X_iY_i}{\lambda} - E\left[ \sum_{i=1}^{n} \frac{X_iZ_i}{2\lambda} \right]\]</span></p>
+<p>So the E-Step concludes with:</p>
+<p><span class="math display">\[Q(\lambda,\lambda^k) = E[\mathcal{L}(\lambda|Y,Z) ] = -n * ln(2\lambda^2) + 2 \sum_{i=1}^{n}ln(X_i) - \sum_{i=1}^{n} \frac{X_iY_i}{\lambda} - \sum_{i=1}^{\beta} \frac{X_iZ_i}{2\lambda} - (n - \beta)\frac{\lambda_k}{\lambda}\]</span></p>
+</div>
+<div id="maximazation-step-m-step" class="section level2">
+<h2><span class="header-section-number">17.2</span> Maximazation-Step (M-Step)</h2>
+<p>Usually this can be done by taking the derivative with respect to the parameters to estimate. There might be different ways to do the maximization though.</p>
+<p><span class="math display">\[\frac{\partial Q(\lambda,\lambda^k)}{\partial \lambda} = - \frac{2n}{\lambda} + \sum_{i=1}^{n} \frac{X_iY_i}{\lambda^2} + \frac{1}{2} \sum_{i=1}^{\beta} \frac{X_iZ_i}{\lambda^2} + (n - \beta) \frac{\lambda_k}{\lambda^2}\]</span></p>
+<p>And then simply solve for the parameter that maximizes.</p>
+<p><span class="math display">\[\lambda = \frac{\sum_{i=1}^{n} X_iY_i + \frac{1}{2} \sum_{i=1}^{\beta}X_iZ_i + (n-\beta)\lambda_k}{2n}\]</span></p>
+</div>
+<div id="em-implementation" class="section level2">
+<h2><span class="header-section-number">17.3</span> EM-Implementation</h2>
+<p>The implementatio can look like this:</p>
+<pre class="r"><code># To keep it simple we will not pass the data to the function.
+lambda_estimate_em = function (input_iterations = 100, input_threshold = 0.0001) {
+  
+  iterations_max = input_iterations
+  iterations = 0
+  threshold = input_threshold
+  
+  n = nrow(data)
+  lambdas = c()
+  lambda = NaN
+  lambda_k = 100
+  
+  Z = data$Z[!is.na(data$Z)]
+  A = data$Z[is.na(data$Z)]
+  
+  Z_index =  which(!is.na(data$Z))
+  A_index =  which(is.na(data$Z))
+  
+  X = data$X[Z_index]
+  X_A = data$X[A_index]
+  
+  beta = length(Z)
+
+  for (i in 1:iterations_max) {
+    iterations = iterations + 1
+    
+    # E/M-Step
+    lambda = lambda_k
+    lambda_k = (sum(data$X * data$Y) + 0.5 * sum(X * Z) +
+                  ((n - beta) * lambda_k)) / (2 * n)
+    lambdas = c(lambdas, lambda_k)
+    
+    if (abs(lambda_k - lambda) &lt; threshold ) break
+  }
+  
+  return(list(lambdas, iterations))
+}
+
+em_result = lambda_estimate_em()
+lambda_result = em_result[[1]][em_result[[2]]]
+
+print(em_result)</code></pre>
+<p>If we have to plot the expected values, take the formula from that from the distribution, for instance for the exponential one it would look like this.</p>
+<p><span class="math display">\[E[Y] = \frac{\lambda}{X_i}, \quad E[Y] = \frac{2\lambda}{X_i}\]</span></p>
+<pre class="r"><code>data$Y_E = (lambda_result)/data$X
+data$Z_E = (2*lambda_result)/data$X
+
+ggplot(data) +
+  geom_line(aes(x = X, y = Z, color = &quot;Z&quot;)) +
+  geom_line(aes(x = X, y = Y, color = &quot;Y&quot;)) +
+    geom_line(aes(x = X, y = Z_E, color = &quot;E[Z]&quot;)) +
+  geom_line(aes(x = X, y = Y_E, color = &quot;E[Y]&quot;)) +
+  labs(title = &quot;Dependence of Z, Y, E[Z] and E[Y] versus X&quot;, y = &quot;Z/Y&quot;, x = &quot;X&quot;) +
+  scale_color_manual(values = c(&quot;#581845&quot;, &quot;#FFC300&quot;, &quot;#C70039&quot;, &quot;#6091ec&quot;)) +
+  theme_minimal()</code></pre>
+</div>
+</div>
+<div id="miscellaneous-plots" class="section level1">
+<h1><span class="header-section-number">18</span> Miscellaneous Plots</h1>
 <div id="histrogram" class="section level2">
-<h2><span class="header-section-number">12.1</span> Histrogram</h2>
+<h2><span class="header-section-number">18.1</span> Histrogram</h2>
 <p>General rool for <code>n</code> datapoints: <span class="math inline">\(\sqrt{n}\)</span> bars.</p>
 <pre class="r"><code>ggplot(sample)+
-  geom_histogram(aes(x = Population), bins = nrow(sample), color = &quot;black&quot;, fill = &quot;#C70039&quot;) +
+  geom_histogram(aes(x = Population), bins = nrow(sample), color = &quot;black&quot;,
+                 fill = &quot;#C70039&quot;) +
   ggtitle(&quot;Histogram of selected cities&quot;)</code></pre>
 </div>
+<div id="histrogram-with-mean" class="section level2">
+<h2><span class="header-section-number">18.2</span> Histrogram with Mean</h2>
+<pre class="r"><code>prices_mean = mean(prices$Price)
+print(prices_mean)
+
+ggplot(prices) +
+  geom_histogram(aes(x = prices$Price, y=..density..), color = &quot;black&quot;, fill = &quot;#dedede&quot;) +
+  geom_vline(aes(xintercept = prices_mean), color = &quot;#FFC300&quot;) +
+  labs(title = &quot;Histrogram of Prices&quot;,
+       y = &quot;Density&quot;,
+  x = &quot;Prices&quot;, color = &quot;Legend&quot;) +
+  theme_minimal()</code></pre>
+</div>
 <div id="simple-xy-plot" class="section level2">
-<h2><span class="header-section-number">12.2</span> Simple X/Y Plot</h2>
+<h2><span class="header-section-number">18.3</span> Simple X/Y Plot</h2>
 <pre class="r"><code>ggplot(data) +
   geom_line(aes(x = X, y = Y), color = &quot;#c70039&quot;) +
   labs(title = &quot;Dependence from Concentration on Day of Measurement&quot;,
        y = &quot;Concentration&quot;,  x = &quot;Day of Measurement&quot;, color = &quot;Legend&quot;) +
+  theme_minimal()</code></pre>
+</div>
+<div id="variance-plot" class="section level2">
+<h2><span class="header-section-number">18.4</span> Variance Plot</h2>
+<pre class="r"><code>for (i in 1:length(v)) {
+  Xi = v[1:i]
+  X$vec_customvar[[i]] = custom_variance(as.vector(Xi))
+}
+
+ggplot(X[2:nrow(X),]) +
+  geom_point(aes(x = index, y = value, colour = &quot;Difference&quot;)) +
+  geom_point(aes(x = index, y = vec_myvar,  colour = &quot;my_var()&quot;)) +
+  geom_point(aes(x = index, y = vec_var, colour = &quot;var()&quot;)) +
+  geom_point(aes(x = index, y = vec_customvar, colour = &quot;custom_variance()&quot;)) +
+  labs(title = &quot;Difference in Variance&quot;, y = &quot;Variance&quot;,
+  x = &quot;Sequence&quot;, color = &quot;Legend&quot;) +
+  scale_color_manual(values = c(&quot;#17202A&quot;, &quot;#C70039&quot;, &quot;#407AFF&quot;, &quot;#FFC300&quot;)) +
+  scale_x_log10() + 
+  theme_minimal()</code></pre>
+</div>
+<div id="scatterplot-with-geom-smoother" class="section level2">
+<h2><span class="header-section-number">18.5</span> Scatterplot With Geom Smoother</h2>
+<pre class="r"><code>ggplot(lottery) +
+  geom_point(aes(x = Day_of_year, y = Draft_No), color = &quot;black&quot;,
+             fill = &quot;#dedede&quot;, shape = 21) +
+  geom_smooth(mapping = aes(x = Day_of_year, y = Draft_No),
+              method = &quot;loess&quot;, size = 1.5, color = &quot;#000000&quot;) +
+  labs(title = &quot;Day of Year VS Draft Number&quot;,
+       y = &quot;Draft Number&quot;,  x = &quot;Day of Year&quot;, color = &quot;Legend&quot;) +
   theme_minimal()</code></pre>
 </div>
 </div>
