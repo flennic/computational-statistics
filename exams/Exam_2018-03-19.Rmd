@@ -15,8 +15,11 @@ output:
 ---
 
 ```{r setup, include=FALSE}
+
 knitr::opts_chunk$set(echo = TRUE)
 library(ggplot2)
+set.seed(42)
+
 ```
 
 # Assignment 1
@@ -24,15 +27,19 @@ library(ggplot2)
 # Assignment 2
 
 ```{r}
+
+################################################################################
+# Assignment 2
+################################################################################
+
 f = function(x) {
-  
-  #if (x < -1 | x > 2) stop("Function only defined for [-1, 2].")
-  
   return(-x * sin(10 * pi * x) + 1) 
 }
 ```
 
-```{r}
+The function to analyse looks like this.
+
+```{r, echo = FALSE}
 sequence = seq(from = -1, to = 2, by = 0.001)
 f.sequence = f(sequence)
 
@@ -44,7 +51,13 @@ ggplot(df) + geom_line(aes(x = sequence, y = f.sequence), color = "#C70039") +
 
 ## Question 2.1 (2 points)
 
+The helper functions look like this.
+
 ```{r}
+
+################################################################################
+# Assignment 2.1
+################################################################################
 
 to_base_10 = function(v) {
   return(Reduce(function(s,r) {s*2+r}, v))
@@ -58,30 +71,19 @@ chrom_to_x = function(chromosome) {
   return(transform_to_interval(to_base_10(chromosome)))
 }
 
-chrom_to_value = function(chromosome) {
+chrom_to_y = function(chromosome) {
   return(f(transform_to_interval(to_base_10(chromosome))))
 }
 
-chrom_to_value(c(1, 0, 1))
-
 ```
 
-## Question 2.2
+## Question 2.2 (3 points)
 
 ```{r}
-  
-generate_population = function(n, m = 15) {
-  
-  population = data.frame()
-  
-   for (i in 1:n) {
-     individual = c(i, ifelse(round(rnorm(m, mean = 0, sd = 1)) > 0, 1, 0))
-     population = rbind(population, individual)
-   }
-  
-  colnames(population) = c("index", as.character(seq(from = 1, to = m, by = 1)))
-  return(population)
-}
+
+################################################################################
+# Assignment 2.2
+################################################################################
 
 tournament_selection = function(population) {
   
@@ -95,8 +97,8 @@ tournament_selection = function(population) {
   fighter_D = population[fighters[4],]
   
   # Let them fight, group A
-  if (chrom_to_value(fighter_A[2:length(fighter_A)]) <
-      chrom_to_value(fighter_A[2:length(fighter_A)])) {
+  if (chrom_to_y(fighter_A[2:length(fighter_A)]) <
+      chrom_to_y(fighter_A[2:length(fighter_A)])) {
     winner_group_A = fighter_A
     looser_group_A = fighter_B
   }
@@ -106,8 +108,8 @@ tournament_selection = function(population) {
   }
   
   # Let them fight, group B
-  if (chrom_to_value(fighter_A[2:length(fighter_C)]) <
-      chrom_to_value(fighter_A[2:length(fighter_D)])) {
+  if (chrom_to_y(fighter_A[2:length(fighter_C)]) <
+      chrom_to_y(fighter_A[2:length(fighter_D)])) {
     winner_group_B = fighter_C
     looser_group_B = fighter_D
   }
@@ -126,6 +128,36 @@ tournament_selection = function(population) {
   return(results)
 }
 
+```
+
+**Question:** Sometimes one varies this tournament selection and the best individual is chosen with a certain
+probability lesser than 1. Can you provide a motivation for this?
+
+**Answer:** If we have some knowledge about the function, that it's mostly monotonic, it might sense to put more emphasis on the best individial. The tournament selection might work better if a lot of individuals get stuck, like here, in local minima. Thus in this case the best individial (with a probability lesser than 1) might work better.
+
+## Question 2.3 (5 points)
+
+```{r}
+
+################################################################################
+# Assignment 2.3
+################################################################################
+
+# Generate a population of size n with m digits as genes
+generate_population = function(n, m = 15) {
+  
+  population = data.frame()
+  
+   for (i in 1:n) {
+     individual = c(i, ifelse(round(rnorm(m, mean = 0, sd = 1)) > 0, 1, 0))
+     population = rbind(population, individual)
+   }
+  
+  colnames(population) = c("index", as.character(seq(from = 1, to = m, by = 1)))
+  return(population)
+}
+
+# Does a crossover where the children take one half of each parent
 crossover = function(chrom_A, chrom_B) {
   chrom_A = unlist(chrom_A)
   chrom_B = unlist(chrom_B)
@@ -138,6 +170,7 @@ crossover = function(chrom_A, chrom_B) {
   return(list(child_A, child_B))
 }
 
+# Mutates a single bit based on prob
 mutate_with_prob = function(x, prob) {
   if (runif(n = 1) < prob) {
     return(ifelse(x == 0, 1, 0))
@@ -147,6 +180,7 @@ mutate_with_prob = function(x, prob) {
   }
 }
 
+# Mutates on average prob genes, each gene has a prob of prob/length to mutate
 mutate = function(chrom, prob = 0.05) {
   chrom = unlist(chrom)
   # To get an average of 0.05 bits mutated
@@ -159,17 +193,21 @@ mutate = function(chrom, prob = 0.05) {
 
 ```{r}
 
+# Helper function to get the best individial from a population
 get_best_individual = function(population) {
-  index_best = which.min(apply(population[,2:ncol(population)], 1, chrom_to_value))
+  index_best = which.min(apply(population[,2:ncol(population)], 1, chrom_to_y))
   return(population[index_best,])
 }
 
+# Use all pre defined methods to actualy implement the genetic algorithm
 genetic_algorithm = function(population_size = 55, mutprob = 0.05, runs = 100) {
   
   # Generate population
   population = generate_population(population_size)
   
   best_individual = get_best_individual(population)
+  
+  best_individual_iteration = 0
   
   for (i in 1:runs) {
     
@@ -187,34 +225,37 @@ genetic_algorithm = function(population_size = 55, mutprob = 0.05, runs = 100) {
     population[fighters[3,1], 2:ncol(population)] = children[[1]]
     population[fighters[4,1], 2:ncol(population)] = children[[2]]
     
-    # Save overall best individual
+    # Save the overall best individual
     current_best = get_best_individual(population)
-    if (chrom_to_value(current_best) < chrom_to_value(best_individual)) {
-      best_indididual = current_best
+    if (chrom_to_y(current_best[2:length(current_best)]) <
+        chrom_to_y(best_individual[2:length(best_individual)])) {
+      best_individual = current_best
+      best_individual_iteration = i
     }
   }
   
-  return(list(best = best_individual, population = population))
+  return(list(best = best_individual, population = population,
+              iteration = best_individual_iteration))
 }
 
 ```
 
-```{r}
-results = genetic_algorithm(population_size = 55, mutprob = 0.5, runs = 100)
+The example call for `mutprob = 0.0077` looks like this.
 
-print(results$best)
-print(chrom_to_value(results$best))
+```{r}
+
+results0077 = genetic_algorithm(population_size = 55, mutprob = 0.0077, runs = 100)
+print(results0077$best)
+print(results0077$iteration)
+
 ```
 
+```{r, echo = FALSE}
 
-```{r}
-print(results$best)
-print(chrom_to_value(results$best))
-
-X = apply(results$population[,2:ncol(results$population)], 1, chrom_to_x)
+X = apply(results0077$population[,2:ncol(results0077$population)], 1, chrom_to_x)
 Y = f(X)
 
-X_best = chrom_to_x(results$best[2:length(results$best)])
+X_best = chrom_to_x(results0077$best[2:length(results0077$best)])
 Y_best = f(X_best)
 
 population = data.frame(X, Y)
@@ -227,10 +268,59 @@ ggplot(df) +
              size = 2, stroke = 1) + 
   geom_point(aes(x = best$X, y = best$Y), data = best, color = "black",
              fill = "#7BA9FF", shape = 21, size = 2, stroke = 1) +
-  labs(title = "maxiter = 10, mutprob = 0.1", y = "f(x)", x = "x") +
+  labs(title = "mutprob = 0.0077", y = "f(x)", x = "x") +
   theme_minimal()
 ```
 
+The example call for `mutprob = 0.5` looks like this.
 
+```{r}
+
+results05 = genetic_algorithm(population_size = 55, mutprob = 0.5, runs = 100)
+print(results05$best)
+print(results05$iteration)
+
+```
+
+```{r, echo = FALSE}
+
+X = apply(results05$population[,2:ncol(results05$population)], 1, chrom_to_x)
+Y = f(X)
+
+X_best = chrom_to_x(results05$best[2:length(results05$best)])
+Y_best = f(X_best)
+
+population = data.frame(X, Y)
+best = data.frame(X_best, Y_best)
+
+ggplot(df) +
+  geom_line(aes(x = sequence, y = f.sequence), color = "#C70039") +
+  geom_point(aes(x = population$X, y = population$Y),
+             data = population, color = "black",fill = "#FFC300", shape = 21,
+             size = 2, stroke = 1) + 
+  geom_point(aes(x = best$X, y = best$Y), data = best, color = "black",
+             fill = "#7BA9FF", shape = 21, size = 2, stroke = 1) +
+  labs(title = "mutprob = 0.5", y = "f(x)", x = "x") +
+  theme_minimal()
+
+```
+
+**Question:** At which generation was the best value found?
+
+**Answer:** The best value for `mutprob = 0.077` was found in iteration `r results0077$iteration` and the best value for `mutprob = 0.5` was found in iteration `r results05$iteration`.
+
+**Question:** Was the minimum found?
+
+**Answer:** For `mutprob = 0.077` no, for `mutprob = 0.5` yes. If we count in the error the encoding does, then `mutprob = 0.5` also did not find the minimum, but it found (probably) the best one the encoding of 15 bits could do.
+
+**Question:** Can you explain the observed behaviour, especially when taking into account the mutation probability?
+
+**Answer:** The mutation probability increases the randomness, which means how the space is being explored. A really high mutation makes the discovery mostly random, while a small one relies more on the characteristics of the parents. Here the function has a lot of *traps* which means relying on the parents is misleading. This means a higher mutation probability suits better for the problem we have here, which could change for other functions. A good way would be having a high mutation rate in the beginning of the algorithm ans slowly dicreasing on towards the end of the iterations, thus changed from global search to local search.
+
+# Source Code
+
+```{r, ref.label=knitr::all_labels(), echo = TRUE, eval = FALSE, results = 'show'}
+
+```
 
 
