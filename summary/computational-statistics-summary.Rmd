@@ -19,7 +19,7 @@ knitr::opts_chunk$set(echo = TRUE, cache = TRUE, include = TRUE, eval = FALSE,
                       fig.pos = 'H')
 ```
 
-# Handeling Computational Errors
+# Handling Computational Errors
 
 ```{r}
 x1 = 1/3
