@@ -1,0 +1,136 @@
+---
+title: "Exam 2018-08-27"
+author: "Maximilian Pfundstein"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    df_print: paged
+    toc: true
+    number_sections: true
+  pdf_document:
+    toc: true
+    toc_depth: 3
+    number_sections: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(ggplot2)
+library(gridExtra)
+```
+
+# Assignment 1 (3 points)
+
+## Question 1.1
+
+```{r}
+
+congruential_generator = function(a, m, x_zero, nmax) {
+  
+  if (nmax%%1 != 0) stop("nmax has to be an integer")
+  
+  storage = vector(mode = "numeric", length = nmax)
+  storage[1] = x_zero
+  
+  for (i in 1:(nmax-1)) {
+    storage[i+1] = ((a * storage[i]) %% m)
+  }
+  
+  return(storage/m)
+}
+
+```
+
+## Question 1.2
+
+```{r}
+
+prs_1 = congruential_generator(69069, 2^32, 9999, 10000)
+prs_2 = congruential_generator(630360016, (2^32-1), 690690, 10000)
+prs_3 = congruential_generator(742938285, (2^32-1), 690690, 10000)
+prs_4 = congruential_generator(1226874153, (2^32-1), 690690, 10000)
+
+unif_samples = runif(10000)
+
+```
+
+```{r, echo = FALSE}
+
+prs_1_df = data.frame(prs_1)
+prs_2_df = data.frame(prs_2)
+prs_3_df = data.frame(prs_2)
+prs_4_df = data.frame(prs_2)
+unif_samples_df = data.frame(unif_samples)
+
+p1 = ggplot(prs_1_df) +
+  geom_histogram(aes(x = prs_1, y=..density..),
+                 fill = "black", bins = 100) +
+   geom_histogram(aes(x = unif_samples, y=..density..),
+                 fill = "#4444ff", bins = 100, data = unif_samples_df, alpha = 0.5) +
+  labs(title = "a = 69069 and b = 2^32",
+  y = "Density",
+  x = "Prices", color = "Legend") +
+  theme_minimal()
+
+p2 = ggplot(prs_2_df) +
+  geom_histogram(aes(x = prs_2, y=..density..),
+                 fill = "black", bins = 100) +
+   geom_histogram(aes(x = unif_samples, y=..density..),
+                 fill = "#4444ff", bins = 100, data = unif_samples_df, alpha = 0.5) +
+  labs(title = "a = 630360016 and b = 2^32 - 1",
+  y = "Density",
+  x = "Prices", color = "Legend") +
+  theme_minimal()
+
+p3 = ggplot(prs_3_df) +
+  geom_histogram(aes(x = prs_3, y=..density..),
+                 fill = "black", bins = 100) +
+   geom_histogram(aes(x = unif_samples, y=..density..),
+                 fill = "#4444ff", bins = 100, data = unif_samples_df, alpha = 0.5) +
+  labs(title = "a = 742938285 and b = 2^32 -1",
+  y = "Density",
+  x = "Prices", color = "Legend") +
+  theme_minimal()
+
+p4 = ggplot(prs_4_df) +
+  geom_histogram(aes(x = prs_4, y=..density..),
+                 fill = "black", bins = 100) +
+   geom_histogram(aes(x = unif_samples, y=..density..),
+                 fill = "#4444ff", bins = 100, data = unif_samples_df, alpha = 0.5) +
+  labs(title = "a = 1226874153 and b = 2^32 - 1",
+  y = "Density",
+  x = "Prices", color = "Legend") +
+  theme_minimal()
+
+grid.arrange(p1, p2, p3, p4, nrow = 2)
+```
+
+```{r}
+print(ks.test(x = prs_1, y = "pnorm"))
+```
+
+```{r}
+print(ks.test(x = prs_2, y = "pnorm"))
+```
+
+```{r}
+print(ks.test(x = prs_3, y = "pnorm"))
+```
+
+```{r}
+print(ks.test(x = prs_4, y = "pnorm"))
+```
+
+```{r}
+print(ks.test(x = unif_samples_df, y = "pnorm"))
+```
+
+## Question 1.3
+
+# Assignment 2
+
+## Question 2.1
+
+## Question 2.2
+
+## Question 2.3
