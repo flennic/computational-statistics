@@ -3,13 +3,13 @@ title: "Exam 2018-03-19"
 author: "Maximilian Pfundstein"
 date: "`r Sys.Date()`"
 output:
-  html_document:
-    df_print: paged
-    toc: true
-    number_sections: true
   pdf_document:
     toc: true
     toc_depth: 3
+    number_sections: true
+  html_document:
+    df_print: paged
+    toc: true
     number_sections: true
 ---
 
@@ -25,16 +25,30 @@ set.seed(42)
 
 ## Question 1.1 (2 points)
 
+For $\alpha = 2$ we define $M \geq \frac{f(x)}{g(x)} = \frac{\beta^2}{\lambda}\frac{x}{e^{x(\beta-\lambda)}}$.
+
+Using the hint and recognizing $\gamma = \beta - \lambda$ we have two cases.
+
+**Case 1:** $\gamma < 1$, then $\underset{x}{\text{max}} \frac{x}{e^(\gamma x)} \Rightarrow \infty$. So $M$ would be infinity which is not feasible.
+
+**Case 2:** $\gamma \geq 1$, then $\gamma = \beta - \lambda = 1 \Rightarrow \lambda = \beta - 1$.
+
+So $M = \frac{\beta^2}{\lambda} = \frac{\beta^2}{\beta -1}$ and with $\beta = 2$ we get $M = 4$.
+
 ## Question 1.2 (5 points)
 
 The following function implements the Acceptance-Rejection-Sampling.
 
 ```{r}
 
+################################################################################
+# Assignment 1.2
+################################################################################
+
 acceptance_rejection_sampling = function(n, alpha = 2, beta = 2) {
 
-  M = 4 # Derived from beta
-  lambda = 1 # Derived from beta
+  M = (beta^2)/(beta -1)
+  lambda = beta - 1
   
   rs = c()
   rs_rejected = c()
@@ -67,8 +81,9 @@ The histogram of the drawn samples can be seen in the following figure:
 
 ```{r, echo = FALSE}
 
-M = 4 # Derived from beta
-lambda = 1 # Derived from beta
+# For accessing them outside of the function if needed for e.g. plotting
+M = 4
+lambda = 1
 
 df = as.data.frame(ars_results[[1]])
 names(df) = "rs"
@@ -85,7 +100,7 @@ The expected rejection rate is given by $1 - \frac{1}{M}$ and here given by ``r 
 
 The observed rejection rate is given by $\frac{\text{rejected}}{\text{accepted} + \text{rejected}}$ and here given by ``r length(ars_results[[2]]) / (length(ars_results[[1]])+length(ars_results[[2]]))``.
 
-```{r}
+```{r, echo = FALSE}
 
 sequence = seq(from = 0, to = 6, by = 0.01)
 dgamma_samples = sapply(X = sequence, FUN = dgamma, shape = 2, rate = 2)
@@ -120,11 +135,11 @@ ggplot(df) +
 
 **Question:** Compare (graphically and using relevant statistics) your simulated samples with the true Gamma distributions. Provide appropriate plots and comments.
 
-**Answer:** We can see that the proposal envolops the target distribution but has a large rejection are. That's why we reject $\frac{\text{rejected}}{\text{accepted} + \text{rejected}}$ and here given by ``r length(ars_results[[2]]) / (length(ars_results[[1]])+length(ars_results[[2]]))`` of the samples.
+**Answer:** We can see that the proposal envolops the target distribution but has a large rejection are. That's why we reject ``r length(ars_results[[2]]) / (length(ars_results[[1]])+length(ars_results[[2]]))`` which is given by $\frac{\text{rejected}}{\text{accepted} + \text{rejected}}$.
 
 If we compare the real `Gamma(2, 2)` with the histrogram of our samples, they look almost identical-
 
-*In the exam a plot of a histrogram of the real `Gamma(2, 2)` should be shown as well.*
+*In the exam a plot of a histrogram of the real `Gamma(2, 2)` should be shown as well. Also different parameters should be used.*
 
 ## Question 1.3 (3 points)
 
@@ -140,6 +155,10 @@ $$g(x) = \frac{1}{4}x^3$$
 So we simply put our drawn samples into $g(x)$ and calculate the mean.
 
 ```{r}
+
+################################################################################
+# Assignment 1.3
+################################################################################
 
 g = function(x) return(1/4 * x^3)
 
