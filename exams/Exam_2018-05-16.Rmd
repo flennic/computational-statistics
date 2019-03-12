@@ -41,8 +41,8 @@ ggplot(samples_true_df) +
   theme_minimal()
 
 sequence = seq(from = -5, to = 10, by = 0.01)
-pareto_density = sapply(sequence, dpareto, shape = 4, scale = 2)
-#pareto_density = sapply(sequence, dpar, alpha = 4, beta = 2)
+#pareto_density = sapply(sequence, dpareto, shape = 4, scale = 2)
+pareto_density = sapply(sequence, dpar, alpha = 4, beta = 2)
 
 df = data.frame(sequence, pareto_density)
 
