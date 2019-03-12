@@ -287,7 +287,7 @@ f_approximate = function(func_target, bins, A_init, func_target_gradient = NULL)
     
     # We rely on three known points
     known_values = c(func_target(lower_boundary),
-                   func_target(lower_boundary + upper_boundary/2),
+                   func_target((lower_boundary + upper_boundary)/2),
                    func_target(upper_boundary))
   
     # Now we optimize for this interval using the previous function
@@ -336,13 +336,13 @@ Now we perform the interpolation.
 
 ```{r}
 
-f1_res = f_approximate(f1, bins = 100, rep(0.001, 3))
+f1_res = f_approximate(f1, bins = 1000, rep(0.001, 3))
 head(f1_res)
 
 ```
 
 ```{r}
-f2_res = f_approximate(f2, bins = 100, rep(0.001, 3))
+f2_res = f_approximate(f2, bins = 1000, rep(0.005, 3))
 head(f2_res)
 ```
 
@@ -353,7 +353,7 @@ f_tilde = function(x, a0, a1, a2) a0 + a1 * x + a2 * x^2
 
 df$f1_y_interpolated = sapply(sequence, FUN = function(x) {
   target_row = f1_res[x >= f1_res[,1] & x < f1_res[,2]]
-  return(f_tilde(x, target_row[3], target_row[4], target_row[5]))
+  return(-f_tilde(x, target_row[3], target_row[4], target_row[5]))
 })
 
 df$f2_y_interpolated = sapply(sequence, FUN = function(x) {

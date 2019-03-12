@@ -1443,6 +1443,80 @@ rng_rnorm = function(n, a, m) {
 }
 ```
 
+# Parabolic Interpolation
+
+Interpolate an interval.
+
+```{r}
+interpolate = function(A, X, func, gradient = NULL) {
+  
+  # Interpolation function which is so be used
+  f_tilde = function(x, a0, a1, a2) a0 + a1 * x + a2 * x^2
+  
+  # Error function, here MSE
+  f_error = function(A., X. = X, func. = func) {
+    return(sum((func.(X.) - f_tilde(X., A.[1], A.[2], A.[3]))^2))
+  }
+  
+  # Optimize f_error for parameters in A 
+  res = optim(A, f_error, gradient, method = "CG")
+
+  # Now define with optimized parameters
+  f_tilde = function(x) res$par[1] + res$par[2] * x + res$par[3] * x^2
+  
+  # Return parameters and function
+  return(list(A = res$par, f_tilde = f_tilde))
+}
+```
+
+Interpolate a whole function.
+
+```{r}
+f_approximate = function(func_target, bins, A_init, func_target_gradient = NULL) {
+  
+  # Initialize interval length and return matrix
+  upper_boundary = 0
+  interval_length = 1/bins
+  res = matrix(0, nrow = bins, ncol = 5)
+  colnames(res) = c("lower_boundary", "upper_boundary", "a0", "a1", "a2")
+  
+  # Approximate for each bin
+  for (i in 1:bins) {
+    lower_boundary = upper_boundary
+    upper_boundary = lower_boundary + interval_length
+    
+    # We rely on three known points
+    known_values = c(func_target(lower_boundary),
+                   func_target((lower_boundary + upper_boundary)/2),
+                   func_target(upper_boundary))
+  
+    # Now we optimize for this interval using the previous function
+    interpolated = interpolate(func = func_target, X = known_values, A = A_init,
+                              gradient = func_target_gradient)$A
+    
+    # And fill in the matrix with all necesarry values
+    res[i, 1] = lower_boundary
+    res[i, 2] = upper_boundary
+    res[i, 3:5] = interpolated
+  }
+  
+  return(res)
+}
+```
+
+Call.
+
+```{r}
+f1_res = f_approximate(f1, bins = 1000, rep(0.001, 3))
+
+f_tilde = function(x, a0, a1, a2) a0 + a1 * x + a2 * x^2
+
+df$f1_y_interpolated = sapply(sequence, FUN = function(x) {
+  target_row = f1_res[x >= f1_res[,1] & x < f1_res[,2]]
+  return(-f_tilde(x, target_row[3], target_row[4], target_row[5]))
+})
+```
+
 
 # Miscellaneous Plots
 
