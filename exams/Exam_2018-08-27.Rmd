@@ -25,18 +25,19 @@ library(gridExtra)
 
 ```{r}
 
-congruential_generator = function(a, m, x_zero, nmax) {
+rng_runif = function(a, m, x_zero, nmax) {
   
+  if (!(a >= 0 && a < m)) stop("a in [0, m) is required")
   if (nmax%%1 != 0) stop("nmax has to be an integer")
   
-  storage = vector(mode = "numeric", length = nmax)
+  storage = vector(mode = "numeric", length = nmax+1)
   storage[1] = x_zero
   
   for (i in 1:(nmax-1)) {
     storage[i+1] = ((a * storage[i]) %% m)
   }
   
-  return(storage/m)
+  return(storage[2:length(storage)]/m)
 }
 
 ```
@@ -45,10 +46,10 @@ congruential_generator = function(a, m, x_zero, nmax) {
 
 ```{r}
 
-prs_1 = congruential_generator(69069, 2^32, 9999, 10000)
-prs_2 = congruential_generator(630360016, (2^32-1), 690690, 10000)
-prs_3 = congruential_generator(742938285, (2^32-1), 690690, 10000)
-prs_4 = congruential_generator(1226874153, (2^32-1), 690690, 10000)
+prs_1 = rng_runif(69069, 2^32, 9999, 10000)
+prs_2 = rng_runif(630360016, (2^32-1), 690690, 10000)
+prs_3 = rng_runif(742938285, (2^32-1), 690690, 10000)
+prs_4 = rng_runif(1226874153, (2^32-1), 690690, 10000)
 
 unif_samples = runif(10000)
 
@@ -66,7 +67,7 @@ p1 = ggplot(prs_1_df) +
   geom_histogram(aes(x = prs_1, y=..density..),
                  fill = "black", bins = 100) +
    geom_histogram(aes(x = unif_samples, y=..density..),
-                 fill = "#4444ff", bins = 100, data = unif_samples_df, alpha = 0.5) +
+                 color = "orange", bins = 20, data = unif_samples_df, alpha = 0) +
   labs(title = "a = 69069 and b = 2^32",
   y = "Density",
   x = "Prices", color = "Legend") +
@@ -76,7 +77,7 @@ p2 = ggplot(prs_2_df) +
   geom_histogram(aes(x = prs_2, y=..density..),
                  fill = "black", bins = 100) +
    geom_histogram(aes(x = unif_samples, y=..density..),
-                 fill = "#4444ff", bins = 100, data = unif_samples_df, alpha = 0.5) +
+                 color = "orange", bins = 20, data = unif_samples_df, alpha = 0) +
   labs(title = "a = 630360016 and b = 2^32 - 1",
   y = "Density",
   x = "Prices", color = "Legend") +
@@ -86,7 +87,7 @@ p3 = ggplot(prs_3_df) +
   geom_histogram(aes(x = prs_3, y=..density..),
                  fill = "black", bins = 100) +
    geom_histogram(aes(x = unif_samples, y=..density..),
-                 fill = "#4444ff", bins = 100, data = unif_samples_df, alpha = 0.5) +
+                 color = "orange", bins = 20, data = unif_samples_df, alpha = 0) +
   labs(title = "a = 742938285 and b = 2^32 -1",
   y = "Density",
   x = "Prices", color = "Legend") +
@@ -96,7 +97,7 @@ p4 = ggplot(prs_4_df) +
   geom_histogram(aes(x = prs_4, y=..density..),
                  fill = "black", bins = 100) +
    geom_histogram(aes(x = unif_samples, y=..density..),
-                 fill = "#4444ff", bins = 100, data = unif_samples_df, alpha = 0.5) +
+                 color = "orange", bins = 20, data = unif_samples_df, alpha = 0) +
   labs(title = "a = 1226874153 and b = 2^32 - 1",
   y = "Density",
   x = "Prices", color = "Legend") +
@@ -106,31 +107,279 @@ grid.arrange(p1, p2, p3, p4, nrow = 2)
 ```
 
 ```{r}
-print(ks.test(x = prs_1, y = "pnorm"))
+print(ks.test(x = prs_1, y = "punif"))
 ```
 
 ```{r}
-print(ks.test(x = prs_2, y = "pnorm"))
+print(ks.test(x = prs_2, y = "punif"))
 ```
 
 ```{r}
-print(ks.test(x = prs_3, y = "pnorm"))
+print(ks.test(x = prs_3, y = "punif"))
 ```
 
 ```{r}
-print(ks.test(x = prs_4, y = "pnorm"))
+print(ks.test(x = prs_4, y = "punif"))
 ```
 
 ```{r}
-print(ks.test(x = unif_samples_df, y = "pnorm"))
+print(ks.test(x = unif_samples, y = "punif"))
 ```
+
+**Answer:** We see that the second and the last settings have a low-p value and have to be rejected at a significance level of $\alpha = 10\%$
+
+- `a = 1` mod `p` for every prime divisor `p` of `m`
+- `a = 1` mod `4` if `4` divides `m`
+- `c` and m have to be relatively prime (no common divisirs bar 2)
+
+In our case `c = 1`.
 
 ## Question 1.3
+
+```{r}
+
+rng_rnorm = function(n, a, m) {
+  if (!(a >= 0 && a < m)) stop("a in [0, m) is required")
+  
+  n_half = ceiling(n/2)
+  
+  storage = vector(mode = "numeric", length = n)
+  
+  storage_theta = rng_runif(a = a, m = m, x_zero = 123456789, nmax = n_half) * 2 * pi
+  storage_d = rng_runif(a = a, m = m, x_zero = 12345, nmax = n_half)
+  
+  for (i in 1:n_half) {
+    storage[2*i] = sqrt(-2 * log(storage_d[i])) * cos(storage_theta[i])
+    storage[2*i+1] = sqrt(-2 * log(storage_d[i])) * sin(storage_theta[i])
+  }
+  
+  return(storage)
+}
+
+```
+
+```{r}
+
+rng_normal_1 = rng_rnorm(10000, a = 69069, m =2^32)
+rng_normal_2 = rng_rnorm(10000, a = 630360016, m = 2^32-1)
+rng_normal_3 = rng_rnorm(10000, a = 742938285, m = 2^32-1)
+rng_normal_4 = rng_rnorm(10000, a = 1226874153, m = 2^32-1)
+
+norm_samples = rnorm(10000)
+
+```
+
+```{r, echo = FALSE}
+
+rng_normal_1_df = data.frame(rng_normal_1)
+rng_normal_2_df = data.frame(rng_normal_2)
+rng_normal_3_df = data.frame(rng_normal_3)
+rng_normal_4_df = data.frame(rng_normal_4)
+norm_samples_df = data.frame(norm_samples)
+
+p1 = ggplot(rng_normal_1_df) +
+  geom_histogram(aes(x = rng_normal_1, y=..density..),
+                 fill = "black", bins = 100) +
+   geom_histogram(aes(x = norm_samples, y=..density..),
+                 color = "orange", bins = 20, data = norm_samples_df, alpha = 0) +
+  labs(title = "a = 69069 and b = 2^32",
+  y = "Density",
+  x = "Prices", color = "Legend") +
+  theme_minimal()
+
+p2 = ggplot(rng_normal_2_df) +
+  geom_histogram(aes(x = rng_normal_2, y=..density..),
+                 fill = "black", bins = 100) +
+   geom_histogram(aes(x = norm_samples, y=..density..),
+                 color = "orange", bins = 20, data = norm_samples_df, alpha = 0) +
+  labs(title = "a = 630360016 and b = 2^32 - 1",
+  y = "Density",
+  x = "Prices", color = "Legend") +
+  theme_minimal()
+
+p3 = ggplot(rng_normal_3_df) +
+  geom_histogram(aes(x = rng_normal_3, y=..density..),
+                 fill = "black", bins = 100) +
+   geom_histogram(aes(x = norm_samples, y=..density..),
+                 color = "orange", bins = 20, data = norm_samples_df, alpha = 0) +
+  labs(title = "a = 742938285 and b = 2^32 -1",
+  y = "Density",
+  x = "Prices", color = "Legend") +
+  theme_minimal()
+
+p4 = ggplot(rng_normal_4_df) +
+  geom_histogram(aes(x = rng_normal_4, y=..density..),
+                 fill = "black", bins = 100) +
+   geom_histogram(aes(x = norm_samples, y=..density..),
+                 color = "orange", bins = 20, data = norm_samples_df, alpha = 0) +
+  labs(title = "a = 1226874153 and b = 2^32 - 1",
+  y = "Density",
+  x = "Prices", color = "Legend") +
+  theme_minimal()
+
+grid.arrange(p1, p2, p3, p4, nrow = 2)
+```
+
+```{r}
+print(ks.test(x = rng_normal_1, y = "pnorm"))
+```
+
+```{r}
+print(ks.test(x = rng_normal_2, y = "pnorm"))
+```
+
+```{r}
+print(ks.test(x = rng_normal_3, y = "pnorm"))
+```
+
+```{r}
+print(ks.test(x = rng_normal_4, y = "pnorm"))
+```
+
+```{r}
+print(ks.test(x = norm_samples, y = "pnorm"))
+```
 
 # Assignment 2
 
 ## Question 2.1
 
+```{r}
+
+interpolate = function(A, X, func, gradient = NULL) {
+  
+  # Interpolation function which is so be used
+  f_tilde = function(x, a0, a1, a2) a0 + a1 * x + a2 * x^2
+  
+  # Error function, here MSE
+  f_error = function(A., X. = X, func. = func) {
+    return(sum((func.(X.) - f_tilde(X., A.[1], A.[2], A.[3]))^2))
+  }
+  
+  # Optimize f_error for parameters in A 
+  res = optim(A, f_error, gradient, method = "CG")
+
+  # Now define with optimized parameters
+  f_tilde = function(x) res$par[1] + res$par[2] * x + res$par[3] * x^2
+  
+  # Return parameters and function
+  return(list(A = res$par, f_tilde = f_tilde))
+}
+
+```
+
 ## Question 2.2
 
+```{r}
+
+f_approximate = function(func_target, bins, A_init, func_target_gradient = NULL) {
+  
+  # Initialize interval length and return matrix
+  upper_boundary = 0
+  interval_length = 1/bins
+  res = matrix(0, nrow = bins, ncol = 5)
+  colnames(res) = c("lower_boundary", "upper_boundary", "a0", "a1", "a2")
+  
+  # Approximate for each bin
+  for (i in 1:bins) {
+    lower_boundary = upper_boundary
+    upper_boundary = lower_boundary + interval_length
+    
+    # We rely on three known points
+    known_values = c(func_target(lower_boundary),
+                   func_target(lower_boundary + upper_boundary/2),
+                   func_target(upper_boundary))
+  
+    # Now we optimize for this interval using the previous function
+    interpolated = interpolate(func = func_target, X = known_values, A = A_init,
+                              gradient = func_target_gradient)$A
+    
+    # And fill in the matrix with all necesarry values
+    res[i, 1] = lower_boundary
+    res[i, 2] = upper_boundary
+    res[i, 3:5] = interpolated
+  }
+  
+  return(res)
+}
+
+```
+
 ## Question 2.3
+
+Definition of the original functions.
+
+```{r}
+f1 = function(x) -x * (1 - x)
+f2 = function(x) -x * sin(10 * pi * x)
+```
+
+The look like the following.
+
+```{r, echo = FALSE}
+sequence = seq(from = 0, to = 1, by = 0.001)
+f1_y = f1(sequence)
+f2_y = f2(sequence)
+
+df = data.frame(sequence, f1_y, f2_y)
+
+ggplot(df) +
+  geom_line(aes(x = sequence, y = f1_y, color = "f1")) +
+  geom_line(aes(x = sequence, y = f2_y, color = "f2")) +
+  labs(title = "Original Functions", y = "X", x = "Y", color = "Legend") +
+  scale_color_manual(values = c("#c70039", "#3900c7")) +
+  theme_minimal()
+
+```
+
+Now we perform the interpolation.
+
+```{r}
+
+f1_res = f_approximate(f1, bins = 100, rep(0.001, 3))
+head(f1_res)
+
+```
+
+```{r}
+f2_res = f_approximate(f2, bins = 100, rep(0.001, 3))
+head(f2_res)
+```
+
+
+```{r}
+
+f_tilde = function(x, a0, a1, a2) a0 + a1 * x + a2 * x^2
+
+df$f1_y_interpolated = sapply(sequence, FUN = function(x) {
+  target_row = f1_res[x >= f1_res[,1] & x < f1_res[,2]]
+  return(f_tilde(x, target_row[3], target_row[4], target_row[5]))
+})
+
+df$f2_y_interpolated = sapply(sequence, FUN = function(x) {
+  target_row = f2_res[x >= f2_res[,1] & x < f2_res[,2]]
+  return(f_tilde(x, target_row[3], target_row[4], target_row[5]))
+})
+
+```
+
+```{r, echo = FALSE}
+
+ggplot(df) +
+  geom_line(aes(x = sequence, y = f1_y, color = "f1 original")) +
+  geom_line(aes(x = sequence, y = f1_y_interpolated, color = "f1 interpolated")) +
+  labs(title = "f1 original and interpolated", y = "X", x = "Y", color = "Legend") +
+  scale_color_manual(values = c("#c70039", "#3900c7")) +
+  theme_minimal()
+
+ggplot(df) +
+  geom_line(aes(x = sequence, y = f2_y, color = "f2 original")) +
+  geom_line(aes(x = sequence, y = f2_y_interpolated, color = "f2 interpolated")) +
+  labs(title = "f2 original and interpolated", y = "X", x = "Y", color = "Legend") +
+  scale_color_manual(values = c("#c70039", "#3900c7")) +
+  theme_minimal()
+
+```
+
+
+

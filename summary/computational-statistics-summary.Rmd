@@ -1402,6 +1402,47 @@ ggplot(data) +
   theme_minimal()
 ```
 
+# Uniform Sampling
+
+```{r}
+rng_runif = function(a, m, x_zero, nmax) {
+  
+  if (!(a >= 0 && a < m)) stop("a in [0, m) is required")
+  if (nmax%%1 != 0) stop("nmax has to be an integer")
+  
+  storage = vector(mode = "numeric", length = nmax+1)
+  storage[1] = x_zero
+  
+  for (i in 1:(nmax-1)) {
+    storage[i+1] = ((a * storage[i]) %% m)
+  }
+  
+  return(storage[2:length(storage)]/m)
+}
+```
+
+# Normal Sampling
+
+```{r}
+rng_rnorm = function(n, a, m) {
+  if (!(a >= 0 && a < m)) stop("a in [0, m) is required")
+  
+  n_half = ceiling(n/2)
+  
+  storage = vector(mode = "numeric", length = n)
+  
+  storage_theta = rng_runif(a = a, m = m, x_zero = 123456789, nmax = n_half) * 2 * pi
+  storage_d = rng_runif(a = a, m = m, x_zero = 12345, nmax = n_half)
+  
+  for (i in 1:n_half) {
+    storage[2*i] = sqrt(-2 * log(storage_d[i])) * cos(storage_theta[i])
+    storage[2*i+1] = sqrt(-2 * log(storage_d[i])) * sin(storage_theta[i])
+  }
+  
+  return(storage)
+}
+```
+
 
 # Miscellaneous Plots
 

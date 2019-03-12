@@ -1,0 +1,52 @@
+---
+title: "Exam 2018-05-16"
+author: "Maximilian Pfundstein"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    df_print: paged
+    toc: true
+    number_sections: true
+  pdf_document:
+    toc: true
+    toc_depth: 3
+    number_sections: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(actuar)
+```
+
+# Assignment 1
+
+## Question 1.1
+
+```{r}
+samples_true = rgenpareto(10000, 4, 2)
+samples_true_df = data.frame(prs_1)
+
+ggplot(samples_true_df) +
+  geom_histogram(aes(x = samples_true, y=..density..),
+                 fill = "black", bins = 100) +
+  labs(title = "The Generalized Pareto Distribution",
+  y = "Density",
+  x = "Prices", color = "Legend") +
+  theme_minimal()
+
+sequence = seq(from = 0, to = 10, by = 0.01)
+pareto_sensity = dgenpareto(sequence, shape1 = 4, shape2 = 2)
+
+df = data.frame(sequence, pareto_sensity)
+
+ggplot(df) +
+  geom_line(aes(x = sequence, y = f.sequence), color = "#C70039") +
+  labs(title = "f(x)", y = "f(x)", x = "x") +
+  theme_minimal()
+
+```
+
+
+
+
+# Assignment 2
