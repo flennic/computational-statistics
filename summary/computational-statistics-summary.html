@@ -11,7 +11,7 @@
 
 <meta name="author" content="Maximilian Pfundstein" />
 
-<meta name="date" content="2019-03-11" />
+<meta name="date" content="2019-03-12" />
 
 <title>Computational Statistics Summary</title>
 
@@ -287,7 +287,7 @@ div.tocify {
 
 <h1 class="title toc-ignore">Computational Statistics Summary</h1>
 <h4 class="author"><em>Maximilian Pfundstein</em></h4>
-<h4 class="date"><em>2019-03-11</em></h4>
+<h4 class="date"><em>2019-03-12</em></h4>
 
 </div>
 
@@ -534,8 +534,14 @@ ggplot(df) +
   x = &quot;X&quot;, color = &quot;Legend&quot;) +
   scale_color_manual(values = c(&quot;#17202A&quot;, &quot;#C70039&quot;)) +
   theme_minimal()</code></pre>
-<p>For calculating the <code>c</code> value, use this code:</p>
+<p>For calculating the <code>C</code> value, use this code:</p>
 <pre class="r"><code>c = max(dnorm_samples / ddel_samples)</code></pre>
+<p>Sometimes we cannot do this this easily or have to derive the optimal <span class="math inline">\(C\)</span> by hand. This can be done as follows:</p>
+<p><span class="math display">\[C \geq \frac{\text{target}}{\text{proposal}} = \frac{f(x)}{g(x)}\]</span></p>
+<p>We then calculate:</p>
+<p><span class="math display">\[ \underset{x}{\text{max}}  \frac{f(x)}{g(x)}\]</span></p>
+<p>Which is taking the derivative and setting it to <span class="math inline">\(0\)</span>. Then we solve for <span class="math inline">\(x\)</span> and plug in <span class="math inline">\(x\)</span> into <span class="math display">\[\frac{f(x)}{g(x)} = C\]</span></p>
+<p><strong>Note:</strong> Sometimes <span class="math inline">\(C = M\)</span>.</p>
 <p>For creating nice plots, use this:</p>
 <pre class="r"><code>df$scaled_envelop = c * df$ddel_samples
 
@@ -568,7 +574,7 @@ while (length(rs) &lt; 2000) {
   # Take a random sample from our proposal (x-axis)
   z = rdel(n = 1, mu = 0, b = 1)
   
-  # Take a unform, thus a random y value
+  # Take a uniform, thus a random y value
   u = runif(n = 1, min = 0, max = c * ddel(z))
   
   # Check in which region this on lies
@@ -789,18 +795,32 @@ gelman.diag(mcmc_list10)
 mcmc_list50 = mcmc.list(results50)
 gelman.diag(mcmc_list50)</code></pre>
 </div>
-<div id="integral-estimation" class="section level1">
-<h1><span class="header-section-number">10</span> Integral Estimation</h1>
+<div id="monte-carlo-integration" class="section level1">
+<h1><span class="header-section-number">10</span> Monte Carlo Integration</h1>
 <p>Let’s say we want to integrate the following integral:</p>
-<p><span class="math display">\[\int_{0}^{\infty} x f(x)dx\]</span></p>
-<p><strong>Answer:</strong> To estimate this integral we take our previous samples. We then calculate:</p>
-<p><span class="math display">\[\int_{0}^{\infty} x f(x)dx = E[x_{}] \sim \frac{1}{n}\sum_{i=1}^{n} x_i\]</span> where <span class="math inline">\(x_i\)</span> are our samples. As the decomposed left-side function is just <span class="math inline">\(x\)</span>, this is all we have to do. The limits are given by the proposing function.</p>
-<p>Using the different defined proposals we can use the follwing code for the estimation:</p>
-<pre class="r"><code>valid_samples_lnorm = results_lnorm[!is.na(results_lnorm)]
-sum(valid_samples_lnorm) / length(valid_samples_lnorm)</code></pre>
-<pre class="r"><code>valid_samples_chisquared = results_chisquared[!is.na(results_chisquared)]
-sum(valid_samples_chisquared) / length(valid_samples_chisquared)</code></pre>
-<p>These, of course, do not include the proportional factor.</p>
+<p><span class="math display">\[\int_{0}^{\infty} x^4 e^{-2x}dx\]</span></p>
+<p>so</p>
+<p><span class="math display">\[f(x) = x^4 e^{-2x}\]</span></p>
+<p>For estimating this integral with MCMC we need to split <span class="math inline">\(f(x)\)</span> into <span class="math inline">\(d(x)g(x)\)</span> which can be chosen in any way, as long as the following conditions for $g(x) $are met:</p>
+<ul>
+<li><span class="math inline">\(g(x) \geq 0\)</span> for the drawn interval.</li>
+<li>The integral inside the interval is finite, so <span class="math inline">\(\int_a^bg(x) = C &lt; \infty\)</span></li>
+</ul>
+<p><span class="math inline">\(g(x)\)</span> must drawn from the whole integral range, so from <span class="math inline">\(a\)</span> to <span class="math inline">\(b\)</span>, and exactly the range. If one of the limits its <span class="math inline">\(\infty\)</span>, <span class="math inline">\(g(x)\)</span> must have the same limit (like a gamma distribution for instance for <span class="math inline">\(0\)</span> to <span class="math inline">\(\infty\)</span>).</p>
+<p>Then draw samples from <span class="math inline">\(g(x)\)</span>, <span class="math inline">\(x_i\)</span>.</p>
+<p>Then calculate:</p>
+<p><span class="math display">\[\frac{1}{n}\sum_{i=1}^{n}d(x_i)\]</span></p>
+<p>Which is the mean of the <span class="math inline">\(d(x_i)\)</span> values.</p>
+<p>In this example this looks like this:</p>
+<p>The sampling function is given by:</p>
+<p><span class="math display">\[d(x, \alpha=2, \beta=2) = 4xe^{-2x}\]</span></p>
+<p>Note that <span class="math inline">\(\text{Gamma}(\alpha) = (\alpha-1)!\)</span></p>
+<p>We then identify:</p>
+<p><span class="math display">\[g(x) = \frac{1}{4}x^3\]</span> So we simply put our drawn samples into <span class="math inline">\(g(x)\)</span> and calculate the mean.</p>
+<pre class="r"><code>g = function(x) return(1/4 * x^3)
+
+mean(g(samples))</code></pre>
+<p><strong>Note:</strong> When the limits do not include infinity, we have to scale the results. So we take the result times <span class="math inline">\(C\)</span> where <span class="math inline">\(C = b - a\)</span>. This might be wrong, but that’s what I got from different examples.</p>
 </div>
 <div id="gibbs-sampling" class="section level1">
 <h1><span class="header-section-number">11</span> Gibbs Sampling</h1>
@@ -1408,6 +1428,37 @@ ggplot(X[2:nrow(X),]) +
   labs(title = &quot;Day of Year VS Draft Number&quot;,
        y = &quot;Draft Number&quot;,  x = &quot;Day of Year&quot;, color = &quot;Legend&quot;) +
   theme_minimal()</code></pre>
+</div>
+</div>
+<div id="useful-code-snippets" class="section level1">
+<h1><span class="header-section-number">19</span> Useful Code Snippets</h1>
+<div id="rmarkdown-setup" class="section level2">
+<h2><span class="header-section-number">19.1</span> RMarkdown Setup</h2>
+<pre class="r"><code># ---
+#title: &quot;Computational Statistics Summary&quot;
+#author: &quot;Maximilian Pfundstein&quot;
+#date: &quot;`r Sys.Date()`&quot;
+#output:
+#  html_document:
+#    df_print: paged
+#    toc: true
+#    toc_float: true
+#    number_sections: true
+#  pdf_document:
+#    toc: true
+#    toc_depth: 3
+#    number_sections: true
+# ---</code></pre>
+</div>
+<div id="knitr-options" class="section level2">
+<h2><span class="header-section-number">19.2</span> Knitr options</h2>
+<pre class="r"><code>#{r setup, include=FALSE}
+#knitr::opts_chunk$set(echo = TRUE, cache = TRUE, include = TRUE, eval = FALSE,
+#                      fig.pos = 'H')</code></pre>
+</div>
+<div id="including-source-code" class="section level2">
+<h2><span class="header-section-number">19.3</span> Including Source Code</h2>
+<pre class="r"><code>#{r, ref.label=knitr::all_labels(), echo = TRUE, eval = FALSE, results = 'show'}</code></pre>
 </div>
 </div>
 

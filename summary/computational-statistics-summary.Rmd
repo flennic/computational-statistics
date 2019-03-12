@@ -319,11 +319,23 @@ ggplot(df) +
   theme_minimal()
 ```
 
-For calculating the `c` value, use this code:
+For calculating the `C` value, use this code:
 
 ```{r}
 c = max(dnorm_samples / ddel_samples)
 ```
+
+Sometimes we cannot do this this easily or have to derive the optimal $C$ by hand. This can be done as follows:
+
+$$C \geq \frac{\text{target}}{\text{proposal}} = \frac{f(x)}{g(x)}$$
+
+We then calculate:
+
+$$ \underset{x}{\text{max}}  \frac{f(x)}{g(x)}$$
+
+Which is taking the derivative and setting it to $0$. Then we solve for $x$ and plug in $x$ into $$\frac{f(x)}{g(x)} = C$$
+
+**Note:** Sometimes $C = M$.
 
 For creating nice plots, use this:
 
@@ -624,34 +636,52 @@ mcmc_list50 = mcmc.list(results50)
 gelman.diag(mcmc_list50)
 ```
 
-# Integral Estimation
+# Monte Carlo Integration
 
 Let's say we want to integrate the following integral:
 
-$$\int_{0}^{\infty} x f(x)dx$$
+$$\int_{0}^{\infty} x^4 e^{-2x}dx$$
 
-**Answer:** To estimate this integral we take our previous samples. We then calculate:
+so
 
-$$\int_{0}^{\infty} x f(x)dx = E[x_{}] \sim \frac{1}{n}\sum_{i=1}^{n} x_i$$
-where $x_i$ are our samples. As the decomposed left-side function is just $x$, this is all we have to do. The limits are given by the proposing function.
+$$f(x) = x^4 e^{-2x}$$
 
-Using the different defined proposals we can use the follwing code for the estimation:
+For estimating this integral with MCMC we need to split $f(x)$ into $d(x)g(x)$ which can be chosen in any way, as long as the following conditions for $g(x) $are met:
+
+- $g(x) \geq 0$ for the drawn interval.
+- The integral inside the interval is finite, so $\int_a^bg(x) = C < \infty$
+
+$g(x)$ must drawn from the whole integral range, so from $a$ to $b$, and exactly the range. If one of the limits its $\infty$, $g(x)$ must have the same limit (like a gamma distribution for instance for $0$ to $\infty$).
+
+Then draw samples from $g(x)$, $x_i$.
+
+Then calculate:
+
+$$\frac{1}{n}\sum_{i=1}^{n}d(x_i)$$
+
+Which is the mean of the $d(x_i)$ values.
+
+In this example this looks like this:
+
+The sampling function is given by:
+
+$$d(x, \alpha=2, \beta=2) = 4xe^{-2x}$$
+
+Note that $\text{Gamma}(\alpha) = (\alpha-1)!$
+
+We then identify:
+
+$$g(x) = \frac{1}{4}x^3$$
+So we simply put our drawn samples into $g(x)$ and calculate the mean.
 
 ```{r}
+g = function(x) return(1/4 * x^3)
 
-valid_samples_lnorm = results_lnorm[!is.na(results_lnorm)]
-sum(valid_samples_lnorm) / length(valid_samples_lnorm)
+mean(g(samples))
 
 ```
 
-```{r}
-
-valid_samples_chisquared = results_chisquared[!is.na(results_chisquared)]
-sum(valid_samples_chisquared) / length(valid_samples_chisquared)
-
-```
-
-These, of course, do not include the proportional factor.
+**Note:** When the limits do not include infinity, we have to scale the results. So we take the result times $C$ where $C = b - a$. This might be wrong, but that's what I got from different examples.
 
 # Gibbs Sampling
 
@@ -1445,4 +1475,39 @@ ggplot(lottery) +
   theme_minimal()
 ```
 
+# Useful Code Snippets
+
+## RMarkdown Setup
+
+```{r}
+# ---
+#title: "Computational Statistics Summary"
+#author: "Maximilian Pfundstein"
+#date: "`r Sys.Date()`"
+#output:
+#  html_document:
+#    df_print: paged
+#    toc: true
+#    toc_float: true
+#    number_sections: true
+#  pdf_document:
+#    toc: true
+#    toc_depth: 3
+#    number_sections: true
+# ---
+```
+
+## Knitr options
+
+```{r}
+#{r setup, include=FALSE}
+#knitr::opts_chunk$set(echo = TRUE, cache = TRUE, include = TRUE, eval = FALSE,
+#                      fig.pos = 'H')
+```
+
+## Including Source Code
+
+```{r}
+#{r, ref.label=knitr::all_labels(), echo = TRUE, eval = FALSE, results = 'show'}
+```
 
