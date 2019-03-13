@@ -3,13 +3,13 @@ title: "Exam 2018-05-16"
 author: "Maximilian Pfundstein"
 date: "`r Sys.Date()`"
 output:
-  pdf_document:
-    toc: true
-    toc_depth: 3
-    number_sections: true
   html_document:
     df_print: paged
     toc: true
+    number_sections: true
+  pdf_document:
+    toc: true
+    toc_depth: 3
     number_sections: true
 ---
 
@@ -41,8 +41,8 @@ ggplot(samples_true_df) +
   theme_minimal()
 
 sequence = seq(from = -5, to = 10, by = 0.01)
-#pareto_density = sapply(sequence, dpareto, shape = 4, scale = 2)
-pareto_density = sapply(sequence, dpar, alpha = 4, beta = 2)
+pareto_density = sapply(sequence, dpareto, shape = 4, scale = 2)
+#pareto_density = sapply(sequence, dpar, alpha = 4, beta = 2)
 
 df = data.frame(sequence, pareto_density)
 
@@ -52,6 +52,7 @@ ggplot(df) +
   theme_minimal()
 
 ```
+
 
 We don't have to integrate over the full domain, as the lower limit is given by $\beta$. If $\beta = c$, then $x$ is also given by $x > c$. Thus we have to integrate from $\beta to x$.
 

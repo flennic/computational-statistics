@@ -1,0 +1,205 @@
+---
+title: "Exam 2017-11-09"
+author: "Maximilian Pfundstein"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    df_print: paged
+    toc: true
+    number_sections: true
+  pdf_document:
+    toc: true
+    toc_depth: 3
+    number_sections: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(ggplot2)
+```
+
+# Assignment 1
+
+# Question 1.1
+
+```{r}
+
+rng_rnorm = function(n = 1) {
+  
+  theta = runif(ceiling(n/2), 0, 2*pi)
+  d = runif(ceiling(n/2))
+  
+  res1 = sqrt(-2 * log(d)) * cos(theta)
+  res2 = sqrt(-2 * log(d)) * sin(theta)
+  
+  res = c(res1, res2)
+  
+  return(res[1:n])
+}
+
+samples_norm = rng_rnorm(10000)
+
+ggplot(data.frame(samples_norm)) +
+  geom_histogram(aes(x = samples_norm, y=..density..),
+                 color = "black", fill = "#dedede", bins = 50) +
+  labs(title = "Histrogram of Normal",y = "Density",x = "Values",
+       color = "Legend") + 
+  theme_minimal()
+
+
+```
+
+```{r}
+rng_rgeom = function(n = 1, p = 0.5) {
+  
+  samples = numeric(n)
+  
+  for (i in 1:n) {
+    cnt = 0
+    while (sample(c(0,1), 1 ,replace=FALSE, prob=c(1-p,p)) == 0) {
+      cnt = cnt +1
+    }
+    samples[i] = cnt
+  }
+  return(samples)
+}
+
+samples_geom = rng_rgeom(10000)
+
+ggplot(data.frame(samples_geom)) +
+  geom_histogram(aes(x = samples_geom, y=..density..),
+                 color = "black", fill = "#dedede", bins = 50) +
+  labs(title = "Histrogram of Geometric",y = "Density",x = "Values",
+       color = "Legend") + 
+  theme_minimal()
+
+```
+```{r}
+
+d_abs = function(x, y) {
+  return(rowSums(abs(x - y)))
+}
+
+d_sq = function(x, y) {
+  return(rowSums((x - y)^2))
+}
+
+fratchet_mean = function(y, X, w = 1, dist) {
+  return(sum(w * dist(X, y)))
+}
+
+rng_bivariate = function(n, p) {
+  U = rng_rnorm(n)
+  V = rng_rgeom(n, p)
+  
+  return(as.matrix(data.frame(U, V)))
+}
+
+sample_10 = rng_bivariate(10, p = 1/3)
+sample_50 = rng_bivariate(50, p = 1/3)
+y_init_10 = c(mean(sample_10[,1]), mean(sample_10[,2]))
+y_init_50 = c(mean(sample_50[,1]), mean(sample_50[,2]))
+
+y_10_opt_abs = optim(y_init_10, fratchet_mean, method ="BFGS", w = 1,
+                     dist = d_abs, X = sample_10, control = list(fnscale = 1))
+
+y_10_opt_sq = optim(y_init_10, fratchet_mean, method ="BFGS", w = 1,
+                     dist = d_sq, X = sample_10, control = list(fnscale =1))
+
+y_50_opt_abs = optim(y_init_50, fratchet_mean, method ="BFGS", w = 1,
+                     dist = d_abs, X = sample_50, control = list(fnscale =1))
+
+y_50_opt_sq = optim(y_init_50, fratchet_mean, method ="BFGS", w = 1,
+                     dist = d_sq, X = sample_50, control = list(fnscale =1))
+
+```
+
+```{r}
+
+samples_10_df_abs = data.frame(sample_10)
+samples_10_df_abs$meanU = mean(samples_10_df_abs$U)
+samples_10_df_abs$meanV = mean(samples_10_df_abs$V)
+samples_10_df_abs$medianU = median(samples_10_df_abs$U)
+samples_10_df_abs$medianV = median(samples_10_df_abs$V)
+samples_10_df_abs$optU = y_10_opt_abs$par[1]
+samples_10_df_abs$optV = y_10_opt_abs$par[2]
+
+ggplot(samples_10_df_abs) + 
+  geom_point(aes(x = U, y = V, colour = "Samples"), size = 2, stroke = 1) + 
+  geom_point(aes(x = meanU, y = meanV, colour = "Mean"), size = 2, stroke = 1) + 
+  geom_point(aes(x = medianU, y = medianV, colour = "Median"), size = 2, stroke = 1) +
+  geom_point(aes(x = optU, y = optV, colour = "Optimum"), size = 2, stroke = 1) + 
+  labs(title = "10 Samples with absolute distance", y = "V", x = "U", color ="Legend") + 
+  scale_color_manual(values = c("#7BA9FF", "#FFC300", "#ff4444", "black")) +
+  scale_shape_manual(values = c(21, 21, 21)) + 
+  theme_minimal()
+
+```
+```{r}
+
+samples_10_df_sq = data.frame(sample_10)
+samples_10_df_sq$meanU = mean(samples_10_df_sq$U)
+samples_10_df_sq$meanV = mean(samples_10_df_sq$V)
+samples_10_df_sq$medianU = median(samples_10_df_sq$U)
+samples_10_df_sq$medianV = median(samples_10_df_sq$V)
+samples_10_df_sq$optU = y_10_opt_sq$par[1]
+samples_10_df_sq$optV = y_10_opt_sq$par[2]
+
+ggplot(samples_10_df_sq) + 
+  geom_point(aes(x = U, y = V, colour = "Samples"), size = 2, stroke = 1) + 
+  geom_point(aes(x = meanU, y = meanV, colour = "Mean"), size = 2, stroke = 1) + 
+  geom_point(aes(x = medianU, y = medianV, colour = "Median"), size = 2, stroke = 1) +
+  geom_point(aes(x = optU, y = optV, colour = "Optimum"), size = 2, stroke = 1) + 
+  labs(title = "10 Samples with squared distance", y = "V", x = "U", color ="Legend") + 
+  scale_color_manual(values = c("#7BA9FF", "#FFC300", "#ff4444", "black")) +
+  scale_shape_manual(values = c(21, 21, 21)) + 
+  theme_minimal()
+
+```
+
+```{r}
+
+samples_50_df_abs = data.frame(sample_50)
+samples_50_df_abs$meanU = mean(samples_50_df_abs$U)
+samples_50_df_abs$meanV = mean(samples_50_df_abs$V)
+samples_50_df_abs$medianU = median(samples_50_df_abs$U)
+samples_50_df_abs$medianV = median(samples_50_df_abs$V)
+samples_50_df_abs$optU = y_50_opt_abs$par[1]
+samples_50_df_abs$optV = y_50_opt_abs$par[2]
+
+ggplot(samples_50_df_abs) + 
+  geom_point(aes(x = U, y = V, colour = "Samples"), size = 2, stroke = 1) + 
+  geom_point(aes(x = meanU, y = meanV, colour = "Mean"), size = 2, stroke = 1) + 
+  geom_point(aes(x = medianU, y = medianV, colour = "Median"), size = 2, stroke = 1) +
+  geom_point(aes(x = optU, y = optV, colour = "Optimum"), size = 2, stroke = 1) + 
+  labs(title = "50 Samples with absolute distance", y = "V", x = "U", color ="Legend") + 
+  scale_color_manual(values = c("#7BA9FF", "#FFC300", "#ff4444", "black")) +
+  scale_shape_manual(values = c(21, 21, 21)) + 
+  theme_minimal()
+
+```
+
+```{r}
+
+samples_50_df_sq = data.frame(sample_50)
+samples_50_df_sq$meanU = mean(samples_50_df_sq$U)
+samples_50_df_sq$meanV = mean(samples_50_df_sq$V)
+samples_50_df_sq$medianU = median(samples_50_df_sq$U)
+samples_50_df_sq$medianV = median(samples_50_df_sq$V)
+samples_50_df_sq$optU = y_50_opt_sq$par[1]
+samples_50_df_sq$optV = y_50_opt_sq$par[2]
+
+ggplot(samples_50_df_sq) + 
+  geom_point(aes(x = U, y = V, colour = "Samples"), size = 2, stroke = 1) + 
+  geom_point(aes(x = meanU, y = meanV, colour = "Mean"), size = 2, stroke = 1) + 
+  geom_point(aes(x = medianU, y = medianV, colour = "Median"), size = 2, stroke = 1) +
+  geom_point(aes(x = optU, y = optV, colour = "Optimum"), size = 2, stroke = 1) + 
+  labs(title = "10 Samples with squared distance", y = "V", x = "U", color ="Legend") + 
+  scale_color_manual(values = c("#7BA9FF", "#FFC300", "#ff4444", "black")) +
+  scale_shape_manual(values = c(21, 21, 21)) + 
+  theme_minimal()
+
+```
+
+
+# Assignment 2

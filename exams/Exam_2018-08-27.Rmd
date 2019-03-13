@@ -3,13 +3,13 @@ title: "Exam 2018-08-27"
 author: "Maximilian Pfundstein"
 date: "`r Sys.Date()`"
 output:
-  pdf_document:
-    toc: true
-    toc_depth: 3
-    number_sections: true
   html_document:
     df_print: paged
     toc: true
+    number_sections: true
+  pdf_document:
+    toc: true
+    toc_depth: 3
     number_sections: true
 ---
 
@@ -256,8 +256,14 @@ interpolate = function(A, X, func, gradient = NULL) {
     return(sum((func.(X.) - f_tilde(X., A.[1], A.[2], A.[3]))^2))
   }
   
+  #f_diff = function(A, func) {
+  #  interpolation = a0 + a1 * x + a2 * x^2
+  #  error = sum((interpolation - func(X))^2)
+  #  return(error)
+  #}
+  
   # Optimize f_error for parameters in A 
-  res = optim(A, f_error, gradient, method = "CG")
+  res = optim(A, f_error, gradient, method = "BFGS")
 
   # Now define with optimized parameters
   f_tilde = function(x) res$par[1] + res$par[2] * x + res$par[3] * x^2
@@ -286,10 +292,13 @@ f_approximate = function(func_target, bins, A_init, func_target_gradient = NULL)
     upper_boundary = lower_boundary + interval_length
     
     # We rely on three known points
-    known_values = c(func_target(lower_boundary),
-                   func_target((lower_boundary + upper_boundary)/2),
-                   func_target(upper_boundary))
+    #known_values = c(func_target(lower_boundary),
+    #               func_target((lower_boundary + upper_boundary)/2),
+    #               func_target(upper_boundary))
   
+    known_values = c(lower_boundary, (lower_boundary + upper_boundary)/2,
+                     upper_boundary)
+    
     # Now we optimize for this interval using the previous function
     interpolated = interpolate(func = func_target, X = known_values, A = A_init,
                               gradient = func_target_gradient)$A
@@ -336,7 +345,7 @@ Now we perform the interpolation.
 
 ```{r}
 
-f1_res = f_approximate(f1, bins = 1000, rep(0.001, 3))
+f1_res = f_approximate(f1, bins = 1000, rep(0.000, 3))
 head(f1_res)
 
 ```
@@ -353,7 +362,7 @@ f_tilde = function(x, a0, a1, a2) a0 + a1 * x + a2 * x^2
 
 df$f1_y_interpolated = sapply(sequence, FUN = function(x) {
   target_row = f1_res[x >= f1_res[,1] & x < f1_res[,2]]
-  return(-f_tilde(x, target_row[3], target_row[4], target_row[5]))
+  return(f_tilde(x, target_row[3], target_row[4], target_row[5]))
 })
 
 df$f2_y_interpolated = sapply(sequence, FUN = function(x) {

@@ -15,7 +15,7 @@ output:
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE, cache = TRUE, include = TRUE, eval = FALSE,
+knitr::opts_chunk$set(echo = TRUE, cache = FALSE, include = TRUE, eval = FALSE,
                       fig.pos = 'H')
 ```
 
@@ -157,6 +157,53 @@ $$\hat\sigma_n^2=\frac{1}{n}\sum_{j=1}^{n}(x_j-\hat\mu)^2$$
 $$\frac{\partial\mathcal{L}(\mu, \sigma^2, x_1,...,x_{100})}{\partial\mu} = -\frac{1}{n \sigma^2}\sum_{j=1}^n(x_j-\mu)$$
 
 $$\frac{\partial\mathcal{L}(\mu, \sigma^2, x_1,...,x_{100})}{\partial\sigma^2} = \frac{1}{2\sigma^2}\left( n-\frac{1}{\sigma^2}\sum_{j=1}^n(x_j-\mu)^2\right)$$
+
+Be aware that the following code actually has a flaw as it is not finding the correct centroid.
+
+```{r}
+d_abs = function(x, y) {
+  return(rowSums(abs(x - y)))
+}
+
+d_sq = function(x, y) {
+  return(rowSums((x - y)^2))
+}
+
+fratchet_mean = function(y, X, w = 1, dist) {
+  return(sum(w * dist(X, y)))
+}
+
+rng_bivariate = function(n, p) {
+  U = rng_rnorm(n)
+  V = rng_rgeom(n, p)
+  
+  return(as.matrix(data.frame(U, V)))
+}
+
+sample_10 = rng_bivariate(10, p = 1/3)
+
+y_10_opt_abs = optim(y_init_10, fratchet_mean, method ="BFGS", w = 1,
+                     dist = d_abs, X = sample_10, control = list(fnscale = 1))
+
+samples_10_df_abs = data.frame(sample_10)
+samples_10_df_abs$meanU = mean(samples_10_df_abs$U)
+samples_10_df_abs$meanV = mean(samples_10_df_abs$V)
+samples_10_df_abs$medianU = median(samples_10_df_abs$U)
+samples_10_df_abs$medianV = median(samples_10_df_abs$V)
+samples_10_df_abs$optU = y_10_opt_abs$par[1]
+samples_10_df_abs$optV = y_10_opt_abs$par[2]
+
+ggplot(samples_10_df_abs) + 
+  geom_point(aes(x = U, y = V, colour = "Samples"), size = 2, stroke = 1) + 
+  geom_point(aes(x = meanU, y = meanV, colour = "Mean"), size = 2, stroke = 1) + 
+  geom_point(aes(x = medianU, y = medianV, colour = "Median"), size = 2, stroke = 1) +
+  geom_point(aes(x = optU, y = optV, colour = "Optimum"), size = 2, stroke = 1) + 
+  labs(title = "10 Samples with absolute distance", y = "V", x = "U", color ="Legend") + 
+  scale_color_manual(values = c("#7BA9FF", "#FFC300", "#ff4444", "black")) +
+  scale_shape_manual(values = c(21, 21, 21)) + 
+  theme_minimal()
+```
+
 
 # Sampling Based on Size
 
@@ -1234,58 +1281,190 @@ p1 = ggplot(df) +
   labs(title = "maxiter = 10, mutprob = 0.1", y = "f(x)", x = "x") +
   theme_minimal()
 
-p2 = ggplot(df) +
-  geom_line(aes(x = sequence, y = f.sequence), color = "#C70039") +
-  geom_point(aes(x = genetic2.population, y = f.genetic2.population.),
-             data = population2, color = "black",
-            fill = "#FFC300", shape = 21, size = 2, stroke = 1) +
-  geom_point(aes(x = cx, y = cy), data = best2, color = "black",
-            fill = "#7BA9FF", shape = 21, size = 2, stroke = 1) +
-  labs(title = "maxiter = 10, mutprob = 0.5", y = "f(x)", x = "x") +
-  theme_minimal()
-
-p3 = ggplot(df) +
-  geom_line(aes(x = sequence, y = f.sequence), color = "#C70039") +
-  geom_point(aes(x = genetic3.population, y = f.genetic3.population.),
-             data = population3, color = "black",
-            fill = "#FFC300", shape = 21, size = 2, stroke = 1) +
-  geom_point(aes(x = cx, y = cy), data = best3, color = "black",
-            fill = "#7BA9FF", shape = 21, size = 2, stroke = 1) +
-  labs(title = "maxiter = 10, mutprob = 0.9", y = "f(x)", x = "x") +
-  theme_minimal()
-
-p4 = ggplot(df) +
-  geom_line(aes(x = sequence, y = f.sequence), color = "#C70039") +
-  geom_point(aes(x = genetic4.population, y = f.genetic4.population.),
-             data = population4, color = "black",
-            fill = "#FFC300", shape = 21, size = 2, stroke = 1) +
-  geom_point(aes(x = cx, y = cy), data = best4, color = "black",
-            fill = "#7BA9FF", shape = 21, size = 2, stroke = 1) +
-  labs(title = "maxiter = 100, mutprob = 0.1", y = "f(x)", x = "x") +
-  theme_minimal()
-
-p5 = ggplot(df) +
-  geom_line(aes(x = sequence, y = f.sequence), color = "#C70039") +
-  geom_point(aes(x = genetic5.population, y = f.genetic5.population.),
-             data = population5, color = "black",
-            fill = "#FFC300", shape = 21, size = 2, stroke = 1) +
-  geom_point(aes(x = cx, y = cy), data = best5, color = "black",
-            fill = "#7BA9FF", shape = 21, size = 2, stroke = 1) +
-  labs(title = "maxiter = 100, mutprob = 0.5", y = "f(x)", x = "x") +
-  theme_minimal()
-
-p6 = ggplot(df) +
-  geom_line(aes(x = sequence, y = f.sequence), color = "#C70039") +
-  geom_point(aes(x = genetic6.population, y = f.genetic6.population.),
-             data = population6, color = "black",
-            fill = "#FFC300", shape = 21, size = 2, stroke = 1) +
-  geom_point(aes(x = cx, y = cy), data = best6, color = "black",
-            fill = "#7BA9FF", shape = 21, size = 2, stroke = 1) +
-  labs(title = "maxiter = 100, mutprob = 0.9", y = "f(x)", x = "x") +
-  theme_minimal()
-
 grid.arrange(p1, p2, p3, p4, p5, p6, nrow = 3)
 ```
+
+Another implementation could look like this:
+
+```{r}
+to_base_10 = function(v) {
+  return(Reduce(function(s,r) {s*2+r}, v))
+}
+
+transform_to_interval = function(u, a = -1, b = 2, m = 15) {
+  return(a + u * ((b - a)/(2^m - 1)))
+}
+
+chrom_to_x = function(chromosome) {
+  return(transform_to_interval(to_base_10(chromosome)))
+}
+
+chrom_to_y = function(chromosome) {
+  return(f(transform_to_interval(to_base_10(chromosome))))
+}
+
+tournament_selection = function(population) {
+  
+  # Select fighting partners / groups
+  fighters = sample(1:nrow(population), 4)
+  
+  # Get their values
+  fighter_A = population[fighters[1],]
+  fighter_B = population[fighters[2],]
+  fighter_C = population[fighters[3],]
+  fighter_D = population[fighters[4],]
+  
+  # Let them fight, group A
+  if (chrom_to_y(fighter_A[2:length(fighter_A)]) <
+      chrom_to_y(fighter_A[2:length(fighter_A)])) {
+    winner_group_A = fighter_A
+    looser_group_A = fighter_B
+  }
+  else {
+    winner_group_A = fighter_B
+    looser_group_A = fighter_A
+  }
+  
+  # Let them fight, group B
+  if (chrom_to_y(fighter_A[2:length(fighter_C)]) <
+      chrom_to_y(fighter_A[2:length(fighter_D)])) {
+    winner_group_B = fighter_C
+    looser_group_B = fighter_D
+  }
+  else {
+    winner_group_B = fighter_D
+    looser_group_B = fighter_C
+  }
+  
+  # Return them, first two are winners, last two are looser
+  results = data.frame()
+  results = rbind(results, winner_group_A)
+  results = rbind(results, winner_group_B)
+  results = rbind(results, looser_group_A)
+  results = rbind(results, looser_group_B)
+  
+  return(results)
+}
+
+# Generate a population of size n with m digits as genes
+generate_population = function(n, m = 15) {
+  
+  population = data.frame()
+  
+   for (i in 1:n) {
+     individual = c(i, ifelse(round(rnorm(m, mean = 0, sd = 1)) > 0, 1, 0))
+     population = rbind(population, individual)
+   }
+  
+  colnames(population) = c("index", as.character(seq(from = 1, to = m, by = 1)))
+  return(population)
+}
+
+# Does a crossover where the children take one half of each parent
+crossover = function(chrom_A, chrom_B) {
+  chrom_A = unlist(chrom_A)
+  chrom_B = unlist(chrom_B)
+  
+  cut = round(length(chrom_A)/2)
+  
+  child_A = c(chrom_A[2:cut], chrom_B[(cut+1):length(chrom_B)])
+  child_B = c(chrom_B[2:cut], chrom_A[(cut+1):length(chrom_B)])
+  
+  return(list(child_A, child_B))
+}
+
+# Mutates a single bit based on prob
+mutate_with_prob = function(x, prob) {
+  if (runif(n = 1) < prob) {
+    return(ifelse(x == 0, 1, 0))
+  }
+  else {
+    return(x)
+  }
+}
+
+# Mutates on average prob genes, each gene has a prob of prob/length to mutate
+mutate = function(chrom, prob = 0.05) {
+  chrom = unlist(chrom)
+  # To get an average of 0.05 bits mutated
+  digit_prob = prob / length(chrom)
+  chrom[2:length(chrom)] = sapply(chrom[2:length(chrom)], mutate_with_prob, prob)
+  return(chrom)
+}
+
+# Helper function to get the best individial from a population
+get_best_individual = function(population) {
+  index_best = which.min(apply(population[,2:ncol(population)], 1, chrom_to_y))
+  return(population[index_best,])
+}
+
+# Use all pre defined methods to actualy implement the genetic algorithm
+genetic_algorithm = function(population_size = 55, mutprob = 0.05, runs = 100) {
+  
+  # Generate population
+  population = generate_population(population_size)
+  
+  best_individual = get_best_individual(population)
+  
+  best_individual_iteration = 0
+  
+  for (i in 1:runs) {
+    
+    # Selection
+    fighters = tournament_selection(population)
+    
+    # Create children of winners
+    children = crossover(fighters[1,], fighters[2,])
+    
+    # Mutate the new individuals
+    children[[1]] = mutate(children[1], prob = mutprob)
+    children[[2]] = mutate(children[2], prob = mutprob)
+    
+    # Replace the loosers with the new winners
+    population[fighters[3,1], 2:ncol(population)] = children[[1]]
+    population[fighters[4,1], 2:ncol(population)] = children[[2]]
+    
+    # Save the overall best individual
+    current_best = get_best_individual(population)
+    if (chrom_to_y(current_best[2:length(current_best)]) <
+        chrom_to_y(best_individual[2:length(best_individual)])) {
+      best_individual = current_best
+      best_individual_iteration = i
+    }
+  }
+  
+  return(list(best = best_individual, population = population,
+              iteration = best_individual_iteration))
+}
+```
+
+Call like this:
+
+```{r}
+results0077 = genetic_algorithm(population_size = 55, mutprob = 0.0077, runs = 100)
+print(results0077$best)
+print(results0077$iteration)
+
+X = apply(results0077$population[,2:ncol(results0077$population)], 1, chrom_to_x)
+Y = f(X)
+
+X_best = chrom_to_x(results0077$best[2:length(results0077$best)])
+Y_best = f(X_best)
+
+population = data.frame(X, Y)
+best = data.frame(X_best, Y_best)
+
+ggplot(df) +
+  geom_line(aes(x = sequence, y = f.sequence), color = "#C70039") +
+  geom_point(aes(x = population$X, y = population$Y),
+             data = population, color = "black",fill = "#FFC300", shape = 21,
+             size = 2, stroke = 1) + 
+  geom_point(aes(x = best$X, y = best$Y), data = best, color = "black",
+             fill = "#7BA9FF", shape = 21, size = 2, stroke = 1) +
+  labs(title = "mutprob = 0.0077", y = "f(x)", x = "x") +
+  theme_minimal()
+```
+
 
 # Expectation-Maximization Algorithm (EM)
 
@@ -1443,6 +1622,57 @@ rng_rnorm = function(n, a, m) {
 }
 ```
 
+# Pareto Distribution
+
+```{r}
+# PDF
+dpar = function(x, alpha = 3, beta = 1) {
+  if (x > beta && alpha > 0 && beta > 0) {
+    return(alpha * beta^alpha / (x^alpha + 1))
+  }
+  return(0)
+}
+
+# CDF
+ppar = function(x, alpha = 3, beta = 1) {
+  if (x <= 1) return(0)
+  return(1 - (beta^alpha/x^alpha))
+}
+
+# Inverse
+qpar = function(x, alpha = 3, beta = 1) {
+  return(beta/((1-x)^(1/alpha)))
+}
+
+# Random
+rpar = function(n = 1, alpha = 3, beta = 1) {
+  quantiles = runif(n = n, min = 0, max = 1)
+  rpars = sapply(X = quantiles, FUN = qpar, alpha, beta)
+  return(rpars)
+}
+```
+
+# Geometric Sampling
+
+```{r}
+rng_rgeom = function(n = 1, p = 0.5) {
+  
+  samples = numeric(n)
+  
+  for (i in 1:n) {
+    cnt = 0
+    while (sample(c(0,1), 1 ,replace=FALSE, prob=c(1-p,p)) == 0) {
+      cnt = cnt +1
+    }
+    samples[i] = cnt
+  }
+  return(samples)
+}
+
+samples_geom = rng_rgeom(10000)
+```
+
+
 # Parabolic Interpolation
 
 Interpolate an interval.
@@ -1459,7 +1689,8 @@ interpolate = function(A, X, func, gradient = NULL) {
   }
   
   # Optimize f_error for parameters in A 
-  res = optim(A, f_error, gradient, method = "CG")
+  res = optim(A, f_error, gradient, method = "BFGS")
+  #res = optim(A, f_error, gradient, method = "CG")
 
   # Now define with optimized parameters
   f_tilde = function(x) res$par[1] + res$par[2] * x + res$par[3] * x^2
@@ -1486,9 +1717,8 @@ f_approximate = function(func_target, bins, A_init, func_target_gradient = NULL)
     upper_boundary = lower_boundary + interval_length
     
     # We rely on three known points
-    known_values = c(func_target(lower_boundary),
-                   func_target((lower_boundary + upper_boundary)/2),
-                   func_target(upper_boundary))
+    known_values = c(lower_boundary, (lower_boundary + upper_boundary)/2,
+                   upper_boundary)
   
     # Now we optimize for this interval using the previous function
     interpolated = interpolate(func = func_target, X = known_values, A = A_init,
@@ -1516,7 +1746,6 @@ df$f1_y_interpolated = sapply(sequence, FUN = function(x) {
   return(-f_tilde(x, target_row[3], target_row[4], target_row[5]))
 })
 ```
-
 
 # Miscellaneous Plots
 
