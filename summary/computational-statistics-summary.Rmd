@@ -1620,6 +1620,20 @@ rng_rnorm = function(n, a, m) {
   
   return(storage)
 }
+
+rng_rnorm = function(n = 1) {
+  
+  theta = runif(ceiling(n/2), 0, 2*pi)
+  d = runif(ceiling(n/2))
+  
+  res1 = sqrt(-2 * log(d)) * cos(theta)
+  res2 = sqrt(-2 * log(d)) * sin(theta)
+  
+  res = c(res1, res2)
+  
+  return(res[1:n])
+}
+
 ```
 
 # Pareto Distribution
