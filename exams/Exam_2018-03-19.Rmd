@@ -3,13 +3,13 @@ title: "Exam 2018-03-19"
 author: "Maximilian Pfundstein"
 date: "`r Sys.Date()`"
 output:
-  html_document:
-    df_print: paged
-    toc: true
-    number_sections: true
   pdf_document:
     toc: true
     toc_depth: 3
+    number_sections: true
+  html_document:
+    df_print: paged
+    toc: true
     number_sections: true
 ---
 
